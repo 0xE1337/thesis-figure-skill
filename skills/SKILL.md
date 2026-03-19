@@ -102,6 +102,16 @@ description: |
 - 使用统一配色方案（见下方色板）
 - 使用 `drop shadow` 提升层次感
 - 使用 `fit` 和 `backgrounds` 库实现分区底色
+- **层标题放置**：不要使用 `fit` 节点的 `label` 选项放置层标题（容易与相邻层标题重叠）。应在分区框节点定义之后，用独立的 `\node` 配合 `anchor` 放置标题：
+  ```latex
+  % 先定义分区框
+  \begin{pgfonlayer}{background}
+      \node[zone, ...] (L1) {};
+  \end{pgfonlayer}
+  % 再用独立节点放标题（在框外下方）
+  \node[ltitle, anchor=north east] at (L1.south east) {本地训练层};
+  ```
+  这样标题位置由锚点精确控制，不会被 `fit` 的自动布局挤到不可预期的位置。
 - 所有节点使用 `style` 定义，便于全局调整
 - 所有节点使用 `positioning` 库的相对定位，不使用绝对坐标
 - 编译方式为 `xelatex`
@@ -119,14 +129,32 @@ description: |
 
 #### 回路走线方案选择（按优先级排序）
 
-**方案一（首选）：弧线指向分区框**
-当回路需要从顶层指向底层多个节点时，最简洁的方式是箭头指向整个分区框的边界，而非逐个节点。具体做法：
+**方案一（首选）：分段绘制弧线指向分区框边界**
+当回路需要从顶层指向底层多个节点时，箭头指向整个分区框的边界（`.west` 或 `.east`），而非逐个节点。
+
+**关键：必须将回路拆分为 3 段独立 `\draw` 命令**，不能用单条 `\draw` 配合 `rounded corners`（单条 `\draw` 的 `rounded corners` 会让路径在转弯处穿入分区框）。
+
+```latex
+% === 左侧回路示例：从 source 到 target_zone 左边界 ===
+% 左外侧主干 x = target_zone 左边界 - 1.5cm
+\coordinate (leftRail) at ($(target_zone.west)+(-1.5,0)$);
+
+% 第1段：源节点左出 → 到左外侧主干（水平段）
+\draw[dashed, thick, color=..., rounded corners=10pt]
+    (source.west) -- (leftRail |- source.west);
+% 第2段：主干竖直下行（无转弯，不会穿越任何框）
+\draw[dashed, thick, color=...]
+    (leftRail |- source.west) -- (leftRail |- target_zone.west);
+% 第3段：从主干水平右行 → 终止于分区框左边界（带箭头）
+\draw[-{Stealth[scale=1.1]}, dashed, thick, color=...]
+    (leftRail |- target_zone.west) -- (target_zone.west);
+
+% 标注放在主干竖直段中点旁
+\node[annot, anchor=east, align=center]
+    at ($(leftRail |- middle_zone)+(-0.15,0)$) {全局模型\\[-1pt]下发};
 ```
-% 左侧弧线：从源节点出发，沿左外侧空白下行，箭头指向目标分区框左侧边界
-\draw[dashed, very thick, color=..., rounded corners=8pt]
-    (source.south west) -- ++(0,-0.4) -| ($(target_zone.west)+(-0.8,0)$) -- (target_zone.west);
-```
-优点：线条简洁，无节点遮挡风险。标注放在弧线旁空白处。
+
+这种分段画法确保每段都是纯水平或纯竖直线，不存在 `rounded corners` 导致路径偏移穿入框体的问题。
 
 **方案二：底部总线分发**
 当语义上需要明确箭头到达每个子节点时，使用底部总线：主干从源节点左/右外侧下行到分区框下方（至少 0.8cm），在底部铺一条横线经过各目标节点的 x 坐标，从每个 x 坐标处向上发短箭头到目标节点底部。
@@ -141,10 +169,13 @@ description: |
 ```
 注意两条底部总线需要不同的 y 偏移量（如 0.8cm 和 1.6cm）避免重叠。
 
-**禁止方案：侧面水平分叉穿越**
+**禁止方案A：单条 `\draw` + `rounded corners` 画长距离回路**
+~~`\draw[rounded corners=10pt] (source.west) -- ++(-1,0) -- ++(0,-10) -- (target.west);`~~ —— 看起来简洁，但 `rounded corners` 会让转弯处的路径偏移，导致线条穿入分区虚线框。**长距离回路必须拆分为多段 `\draw`**。
+
+**禁止方案B：侧面水平分叉穿越**
 ~~从左/右外侧竖线分叉水平箭头穿入到各节点的 .west/.east~~ —— 这种方式在分层架构图中**必然**会导致水平箭头穿过分区框并压在中间节点上。**绝对不要使用此方案**，即使竖线主干在框外也不行，因为水平分叉箭头会穿越其他节点的框体。
 
-- **回路走线位置**：回路线必须走在**所有节点和标注之外的空白区域**。具体做法：计算节点边缘坐标，回路主干线至少偏移 0.7cm 以上
+- **回路走线位置**：回路线必须走在**所有节点和标注之外的空白区域**。具体做法：用 `\coordinate` 基于分区框边界计算主干 x 坐标（如 `$(target_zone.west)+(-1.5,0)$`），然后用 `|-` 语法（intersection of）取交点，不要用硬编码的绝对偏移量（如 `++(0,-13.0)`），因为绝对偏移在节点数量或间距变化时容易错位
 - **回路箭头标注**：回路线的标注文字应水平放置在主干线旁边的空白处（如底部横线段上方），不使用 rotate=90 竖排
 - **跨层标注**：在两个分区框之间的空白处放置数据流标注文字，不要让标注与层标题重叠。标注与层标题之间至少保留 5pt 间距
 - **虚线/回路不穿越节点**：所有虚线（异步连线、回路下发线等）必须绕行到节点外侧，不能穿过其他节点框或标注文字
@@ -217,7 +248,7 @@ description: |
 以下模板骨架展示方案 A 的写法（方案 B 只需替换字体配置部分）：
 
 ```latex
-\documentclass[tikz,border=20pt]{standalone}
+\documentclass[tikz,border=25pt]{standalone}
 \usepackage{tikz}
 % ===== 中文支持 =====
 % 当前为服务器编译版，确保中文正确渲染
@@ -279,6 +310,8 @@ description: |
     annot/.style={font=\footnotesize, inner sep=2pt},
     zone/.style={dashed, thick, inner sep=15pt, rounded corners=8pt},
     layer_title/.style={font=\bfseries\small, inner sep=5pt}
+    % 注意：层标题不要用 zone 的 label 选项，
+    % 应在分区框定义后用独立 \node[layer_title, anchor=...] 放置
 ]
 
 % ===== 节点、连线、分区 =====
@@ -362,7 +395,7 @@ description: |
 
 **生成后执行自检清单**：
 - [ ] `\documentclass` 在第一行
-- [ ] `border` 设置为 20pt 或更大（如有外部回路标注，需要 25pt）
+- [ ] `border` 设置为 25pt 或更大（有外部回路标注时需要 35pt，确保标注不被裁切）
 - [ ] 加载了中文支持（ctex 或 ucharclasses 方案）
 - [ ] 所有 `\definecolor` 在 `\begin{document}` 之前
 - [ ] 没有未闭合的花括号或 `\begin/\end` 不配对
@@ -372,7 +405,8 @@ description: |
 - [ ] 中文文字没有放在不支持中文的命令中（如 `\texttt`）
 - [ ] **没有使用 `rotate=90` 竖排中文**，所有标注水平放置
 - [ ] 回路箭头指向了所有相关目标节点，而非只指向其中一个
-- [ ] **回路使用了弧线指向分区框方案或底部总线方案**，没有使用侧面水平分叉穿越方案
+- [ ] **回路使用了分段绘制方案（3段独立 `\draw`）或底部总线方案**，没有使用单条 `\draw` + `rounded corners` 画长距离回路，也没有使用侧面水平分叉穿越方案
+- [ ] **回路终止段的箭头精确终止于分区框边界**（如 `target_zone.west` 或 `target_zone.east`），没有穿入框内
 - [ ] 跨区箭头没有直接刺穿虚线框，而是在分区之间的空白区域中转
 - [ ] 跨层标注文字与层标题之间有足够间距，不会重叠
 - [ ] **虚线/回路线没有穿过任何节点框**，走在节点外侧空白区域
