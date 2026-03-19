@@ -1,0 +1,192 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+% ===== 中文支持 =====
+% 服务器编译版：ctex + Noto Sans CJK SC
+% 如在 Overleaf 编译，可将下面三行替换为 \usepackage{ctex}
+\usepackage[fontset=none]{ctex}
+\setCJKmainfont{Noto Sans CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\usetikzlibrary{shapes, arrows.meta, positioning, fit, backgrounds, calc, shadows, decorations.pathreplacing, patterns}
+
+% ===== 统一色板 =====
+\definecolor{drawBlueFill}{HTML}{DAE8FC}
+\definecolor{drawBlueLine}{HTML}{6C8EBF}
+\definecolor{drawGreenFill}{HTML}{D5E8D4}
+\definecolor{drawGreenLine}{HTML}{82B366}
+\definecolor{drawOrangeFill}{HTML}{FFE6CC}
+\definecolor{drawOrangeLine}{HTML}{D79B00}
+\definecolor{drawPurpleFill}{HTML}{E1D5E7}
+\definecolor{drawPurpleLine}{HTML}{9673A6}
+\definecolor{drawRedFill}{HTML}{F8CECC}
+\definecolor{drawRedLine}{HTML}{B85450}
+\definecolor{drawGreyFill}{HTML}{F5F5F5}
+\definecolor{drawGreyLine}{HTML}{666666}
+
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\footnotesize},
+    msg/.style={-{Stealth[scale=1.0]}, thick, color=black!70},
+    msg_data/.style={-{Stealth[scale=1.2]}, very thick, color=drawOrangeLine},
+    msg_return/.style={-{Stealth[scale=1.0]}, dashed, thick, color=black!70},
+    self_loop/.style={thick, color=black!70, rounded corners=3pt},
+    lifeline/.style={dashed, color=black!30, thick},
+]
+
+% ===== 参与方头部（图标 + 名称）=====
+\def\headY{0}
+\def\colA{0}      % 数据消费方
+\def\colB{4.5}    % 智能合约
+\def\colC{9}      % 数据提供方
+\def\colD{13.5}   % TEE 计算节点
+
+% --- 数据消费方：人形图标 ---
+\node[circle, fill=drawBlueFill, draw=drawBlueLine, minimum size=0.7cm, thick,
+      drop shadow={opacity=0.15}] (iconA) at (\colA, \headY) {};
+% 人形：头 + 身体
+\draw[drawBlueLine, thick] (\colA, 0.08) circle (0.15);
+\draw[drawBlueLine, thick] (\colA, -0.07) -- (\colA, -0.25);
+\draw[drawBlueLine, thick] (\colA-0.15, -0.13) -- (\colA+0.15, -0.13);
+\node[below=0.45cm of iconA, font=\small\bfseries, text=drawBlueLine] (nameA) {数据消费方};
+
+% --- 智能合约：盾牌图标 ---
+\node[circle, fill=drawOrangeFill, draw=drawOrangeLine, minimum size=0.7cm, thick,
+      drop shadow={opacity=0.15}] (iconB) at (\colB, \headY) {};
+% 盾牌简化
+\draw[drawOrangeLine, thick, fill=drawOrangeFill!60]
+    (\colB, 0.22) -- (\colB-0.17, 0.1) -- (\colB-0.17, -0.05)
+    .. controls (\colB-0.1, -0.2) and (\colB, -0.27) .. (\colB, -0.27)
+    .. controls (\colB, -0.27) and (\colB+0.1, -0.2) .. (\colB+0.17, -0.05)
+    -- (\colB+0.17, 0.1) -- cycle;
+\node[below=0.45cm of iconB, font=\small\bfseries, text=drawOrangeLine] (nameB) {智能合约};
+
+% --- 数据提供方：数据库图标 ---
+\node[circle, fill=drawGreenFill, draw=drawGreenLine, minimum size=0.7cm, thick,
+      drop shadow={opacity=0.15}] (iconC) at (\colC, \headY) {};
+% 数据库简化：圆柱
+\draw[drawGreenLine, thick, fill=drawGreenFill!60]
+    (\colC-0.18, 0.15) -- (\colC-0.18, -0.15)
+    arc (180:360:0.18 and 0.07)
+    -- (\colC+0.18, 0.15);
+\draw[drawGreenLine, thick] (\colC-0.18, 0.15) arc (180:360:0.18 and 0.07);
+\draw[drawGreenLine, thick] (\colC-0.18, 0.15) arc (180:0:0.18 and 0.07);
+\node[below=0.45cm of iconC, font=\small\bfseries, text=drawGreenLine] (nameC) {数据提供方};
+
+% --- TEE 计算节点：锁图标 ---
+\node[circle, fill=drawPurpleFill, draw=drawPurpleLine, minimum size=0.7cm, thick,
+      drop shadow={opacity=0.15}] (iconD) at (\colD, \headY) {};
+% 锁简化
+\draw[drawPurpleLine, thick, fill=drawPurpleFill!60, rounded corners=1pt]
+    (\colD-0.13, -0.02) rectangle (\colD+0.13, -0.22);
+\draw[drawPurpleLine, thick]
+    (\colD-0.08, -0.02) -- (\colD-0.08, 0.1)
+    arc (180:0:0.08)
+    -- (\colD+0.08, -0.02);
+\node[below=0.45cm of iconD, font=\small\bfseries, text=drawPurpleLine] (nameD) {TEE 计算节点};
+
+% ===== 生命线 =====
+\def\startY{-1.5}
+\def\endY{-14.0}
+\draw[lifeline] (\colA, \startY) -- (\colA, \endY);
+\draw[lifeline] (\colB, \startY) -- (\colB, \endY);
+\draw[lifeline] (\colC, \startY) -- (\colC, \endY);
+\draw[lifeline] (\colD, \startY) -- (\colD, \endY);
+
+% ===== 时序消息 =====
+
+% (1) 消费方 → 合约：提交请求 + 质押保证金
+\def\msgYa{-2.0}
+\draw[msg] (\colA, \msgYa) -- node[above, font=\footnotesize] {提交请求 + 质押保证金} (\colB, \msgYa);
+\node[fill=drawBlueFill, draw=drawBlueLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colA, \msgYa) {1};
+
+% (2) 合约自检：验证请求
+\def\msgYb{-3.2}
+\draw[self_loop] (\colB+0.15, \msgYb+0.3) -- ++(0.8, 0) -- ++(0, -0.6) -- ++(-0.8, 0);
+\draw[-{Stealth[scale=0.8]}, thick, color=black!70] (\colB+0.95, \msgYb-0.3) -- (\colB+0.15, \msgYb-0.3);
+\node[anchor=west, font=\footnotesize, fill=white, inner sep=1pt] at (\colB+1.0, \msgYb) {验证请求合法性};
+\node[fill=drawOrangeFill, draw=drawOrangeLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colB, \msgYb) {2};
+
+% (3) 合约 → 提供方：授权通知
+\def\msgYc{-4.4}
+\draw[msg] (\colB, \msgYc) -- node[above, font=\footnotesize] {授权通知} (\colC, \msgYc);
+\node[fill=drawOrangeFill, draw=drawOrangeLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colB, \msgYc) {3};
+
+% (4) 提供方自检：加密原始数据
+\def\msgYd{-5.6}
+\draw[self_loop] (\colC+0.15, \msgYd+0.3) -- ++(0.8, 0) -- ++(0, -0.6) -- ++(-0.8, 0);
+\draw[-{Stealth[scale=0.8]}, thick, color=black!70] (\colC+0.95, \msgYd-0.3) -- (\colC+0.15, \msgYd-0.3);
+\node[anchor=west, font=\footnotesize, fill=white, inner sep=1pt] at (\colC+1.0, \msgYd) {加密原始数据};
+\node[fill=drawGreenFill, draw=drawGreenLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colC, \msgYd) {4};
+
+% (5) 提供方 → TEE：上传数据密文（粗橙色）
+\def\msgYe{-6.8}
+\draw[msg_data] (\colC, \msgYe) -- node[above, font=\footnotesize] {上传数据密文} (\colD, \msgYe);
+\node[fill=drawGreenFill, draw=drawGreenLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colC, \msgYe) {5};
+
+% (6) TEE 自检：飞地内解密并计算（红色高亮）
+\def\msgYf{-8.2}
+\draw[self_loop, color=drawRedLine] (\colD+0.15, \msgYf+0.3) -- ++(0.8, 0) -- ++(0, -0.6) -- ++(-0.8, 0);
+\draw[-{Stealth[scale=0.8]}, thick, color=drawRedLine] (\colD+0.95, \msgYf-0.3) -- (\colD+0.15, \msgYf-0.3);
+\node[anchor=west, font=\footnotesize, fill=white, inner sep=1pt, text=drawRedLine] at (\colD+1.0, \msgYf) {飞地内解密并计算};
+\node[fill=drawPurpleFill, draw=drawPurpleLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colD, \msgYf) {6};
+
+% TEE 安全飞地高亮框
+\begin{pgfonlayer}{background}
+\node[fill=drawRedFill!25, draw=drawRedLine!60, dashed, thick, rounded corners=5pt,
+      inner sep=8pt, fit={(\colD-0.3, \msgYf+0.55)(\colD+2.3, \msgYf-0.55)},
+      label={[font=\scriptsize\bfseries, text=drawRedLine, anchor=north east]north east:安全飞地}] {};
+\end{pgfonlayer}
+
+% (7) TEE → 合约：结果密文 + 远程证明
+\def\msgYg{-9.6}
+\draw[msg] (\colD, \msgYg) -- node[above, font=\footnotesize] {结果密文 + 远程证明} (\colB, \msgYg);
+\node[fill=drawPurpleFill, draw=drawPurpleLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colD, \msgYg) {7};
+
+% (8) 合约自检：验证远程证明
+\def\msgYh{-10.8}
+\draw[self_loop] (\colB+0.15, \msgYh+0.3) -- ++(0.8, 0) -- ++(0, -0.6) -- ++(-0.8, 0);
+\draw[-{Stealth[scale=0.8]}, thick, color=black!70] (\colB+0.95, \msgYh-0.3) -- (\colB+0.15, \msgYh-0.3);
+\node[anchor=west, font=\footnotesize, fill=white, inner sep=1pt] at (\colB+1.0, \msgYh) {验证远程证明};
+\node[fill=drawOrangeFill, draw=drawOrangeLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colB, \msgYh) {8};
+
+% (9) 合约 → 消费方：转发结果密文（虚线返回）
+\def\msgYi{-11.8}
+\draw[msg_return] (\colB, \msgYi) -- node[above, font=\footnotesize] {转发结果密文} (\colA, \msgYi);
+\node[fill=drawOrangeFill, draw=drawOrangeLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colB, \msgYi) {9};
+
+% (10) 合约 → 提供方：释放保证金（虚线返回）
+\def\msgYj{-12.5}
+\draw[msg_return] (\colB, \msgYj) -- node[above, font=\footnotesize] {释放保证金} (\colC, \msgYj);
+\node[fill=drawOrangeFill, draw=drawOrangeLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colB, \msgYj) {10};
+
+% (11) 消费方自检：解密获得结果
+\def\msgYk{-13.5}
+\draw[self_loop] (\colA+0.15, \msgYk+0.3) -- ++(0.8, 0) -- ++(0, -0.6) -- ++(-0.8, 0);
+\draw[-{Stealth[scale=0.8]}, thick, color=black!70] (\colA+0.95, \msgYk-0.3) -- (\colA+0.15, \msgYk-0.3);
+\node[anchor=west, font=\footnotesize, fill=white, inner sep=1pt] at (\colA+1.0, \msgYk) {解密获得结果};
+\node[fill=drawBlueFill, draw=drawBlueLine, rounded corners=2pt, minimum height=0.4cm,
+      inner sep=2pt, font=\scriptsize] at (\colA, \msgYk) {11};
+
+% ===== 底部注释 =====
+\node[font=\small, text=drawRedLine, anchor=north] at ($(0.5*\colA+0.5*\colD, \endY)+(0, -0.3)$)
+    {全程原始数据不出 TEE 飞地，实现数据可用不可见};
+
+% ===== 底部分隔装饰线 =====
+\draw[drawGreyLine, thick, decorate, decoration={brace, amplitude=5pt, mirror}]
+    (\colA-0.5, \endY-0.1) -- (\colD+0.5, \endY-0.1);
+
+\end{tikzpicture}
+\end{document}

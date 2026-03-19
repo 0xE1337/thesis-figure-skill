@@ -1,0 +1,112 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage[fontset=none]{ctex}
+\setCJKmainfont{Noto Sans CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc, shadows}
+
+\definecolor{drawBlueFill}{HTML}{DAE8FC}
+\definecolor{drawBlueLine}{HTML}{6C8EBF}
+\definecolor{drawGreenFill}{HTML}{D5E8D4}
+\definecolor{drawGreenLine}{HTML}{82B366}
+\definecolor{drawOrangeFill}{HTML}{FFE6CC}
+\definecolor{drawOrangeLine}{HTML}{D79B00}
+\definecolor{drawPurpleFill}{HTML}{E1D5E7}
+\definecolor{drawPurpleLine}{HTML}{9673A6}
+\definecolor{drawRedFill}{HTML}{F8CECC}
+\definecolor{drawRedLine}{HTML}{B85450}
+\definecolor{drawGreyFill}{HTML}{F5F5F5}
+\definecolor{drawGreyLine}{HTML}{666666}
+
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
+
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\footnotesize},
+    svc/.style={rectangle, rounded corners=3pt, align=center,
+        minimum height=1.05cm, minimum width=2.6cm,
+        drop shadow={opacity=0.15}, thick},
+    blue_svc/.style={svc, fill=drawBlueFill, draw=drawBlueLine},
+    green_svc/.style={svc, fill=drawGreenFill, draw=drawGreenLine},
+    orange_svc/.style={svc, fill=drawOrangeFill, draw=drawOrangeLine},
+    purple_svc/.style={svc, fill=drawPurpleFill, draw=drawPurpleLine},
+    grey_svc/.style={svc, fill=drawGreyFill, draw=drawGreyLine},
+    client_box/.style={svc, fill=drawBlueFill!25, draw=drawBlueLine!50, minimum width=2.2cm},
+    infra_box/.style={svc, fill=drawOrangeFill!40, draw=drawOrangeLine!60, minimum width=3.0cm, rounded corners=5pt},
+    arrow_bi/.style={{Stealth[scale=0.9]}-{Stealth[scale=0.9]}, thick, color=black!55},
+    arrow/.style={-{Stealth[scale=1.0]}, thick, color=black!70},
+    arrow_dash/.style={-{Stealth[scale=0.9]}, dashed, thick, color=black!40},
+    db/.style={cylinder, cylinder uses custom fill,
+        cylinder body fill=drawGreyFill, cylinder end fill=black!8,
+        shape border rotate=90, draw=drawGreyLine,
+        aspect=0.25, minimum height=0.85cm, minimum width=1.3cm,
+        align=center, thick, font=\footnotesize},
+    tag/.style={font=\scriptsize, fill=white, inner sep=1pt, rounded corners=1pt},
+]
+
+% ===== 中心：API 网关 =====
+\node[regular polygon, regular polygon sides=6, minimum size=2.8cm,
+      fill=drawOrangeFill!80, draw=drawOrangeLine, very thick,
+      drop shadow={opacity=0.2}, align=center, font=\small\bfseries]
+    (gw) at (0, 0) {API 网关\\{\footnotesize 路由 / 鉴权 / 限流}};
+
+% ===== 外部客户端 =====
+\node[client_box] (web) at (-2.2, 4.2) {Web 前端};
+\node[client_box] (app) at (2.2, 4.2) {移动端 App};
+\draw[arrow, very thick, color=drawBlueLine] (web.south) -- ++(0,-0.6) -| ($(gw.north)+(-0.5,0)$);
+\draw[arrow, very thick, color=drawBlueLine] (app.south) -- ++(0,-0.6) -| ($(gw.north)+(0.5,0)$);
+
+% ===== 六个微服务 =====
+\node[blue_svc]   (user)   at (60:4.5)  {用户服务\\{\scriptsize 注册 / 登录 / 权限}};
+\node[green_svc]  (order)  at (0:5.0)   {订单服务\\{\scriptsize 创建 / 支付 / 退款}};
+\node[purple_svc] (recom)  at (-55:4.5) {推荐服务\\{\scriptsize 协同过滤 / 排序}};
+\node[orange_svc] (notify) at (-125:4.5){通知服务\\{\scriptsize 短信 / 邮件 / 推送}};
+\node[grey_svc]   (logSvc) at (180:5.0) {日志服务\\{\scriptsize 采集 / 检索 / 告警}};
+\node[blue_svc]   (config) at (120:4.5) {配置中心\\{\scriptsize 动态配置 / 灰度}};
+
+% 网关 ↔ 六服务
+\draw[arrow_bi] (gw) -- (user);
+\draw[arrow_bi] (gw) -- (order);
+\draw[arrow_bi] (gw) -- (recom);
+\draw[arrow_bi] (gw) -- (notify);
+\draw[arrow_bi] (gw) -- (logSvc);
+\draw[arrow_bi] (gw) -- (config);
+
+% ===== 后端存储 =====
+\node[db] (dbUser) at ($(user.north)+(0, 0.8)$) {MySQL};
+\draw[arrow] (user) -- (dbUser);
+
+\node[db] (dbOrder) at ($(order.east)+(1.3, 0)$) {PostgreSQL};
+\draw[arrow] (order) -- (dbOrder);
+
+\node[db, cylinder body fill=drawRedFill!20] (dbRec) at ($(recom.east)+(1.3, 0)$) {Redis};
+\draw[arrow] (recom) -- (dbRec);
+
+% ===== 消息队列（底部居中）=====
+\node[infra_box] (mq) at (0, -7.2) {消息队列 Kafka};
+
+% 订单 → MQ：从订单服务底部向下，走最右侧绕过推荐服务
+\draw[arrow_dash] (order.south) -- ++(0, -1.5) -- ++(2.0, 0) |- (mq.east);
+\node[tag] at ($(order.south)+(1.8, -1.5)$) {订单事件};
+
+% MQ → 通知：从MQ左侧向上，走最左侧绕过日志服务
+\draw[arrow_dash] (mq.west) -- ++(-2.0, 0) |- (notify.south);
+\node[tag] at ($(mq.west)+(-1.5, 1.0)$) {异步通知};
+
+% 日志 → MQ：日志服务底部直下到MQ
+\draw[arrow_dash] (logSvc.south) |- (mq.north west);
+\node[tag] at ($(logSvc.south)+(-0.2, -0.8)$) {日志流};
+
+% ===== 服务注册中心 =====
+\node[svc, fill=drawGreenFill!25, draw=drawGreenLine!50, minimum width=2.8cm,
+      rounded corners=5pt] (nacos) at (6.0, -7.2) {服务注册 Nacos};
+\draw[arrow_dash, color=drawGreenLine!50] (order.south) -- ++(0, -0.6) -- ++(3.5, 0) |- (nacos.north);
+
+% ===== 背景装饰 =====
+\begin{pgfonlayer}{background}
+    \draw[drawGreyLine!15, thick, dashed] (0, 0) circle (6.2);
+\end{pgfonlayer}
+
+\end{tikzpicture}
+\end{document}
