@@ -1,30 +1,38 @@
 # thesis-figure-skill
 
-> 🎓 Claude Skill：粘贴论文文案，自动生成学术级 LaTeX/TikZ 配图
+> Claude Skill：粘贴论文文案或上传图片，自动生成学术级配图（LaTeX/TikZ + draw.io）
 
-一个用于 [Claude](https://claude.ai) 的 Skill，让 AI 自动将学术论文文案转化为高质量 LaTeX/TikZ 配图。
+一个用于 [Claude](https://claude.ai) 的 Skill，让 AI 自动将学术论文文案转化为高质量配图。支持两种输出格式：
 
-> 输入论文文字 → 自动生成 TikZ 代码 → 编译输出高清 PNG + .tex 源文件
+- **LaTeX/TikZ**：适合系统架构图、数据流图、几何示意图等结构化图表，可直接嵌入论文
+- **draw.io XML**：适合技术路线图、科研展示图、学术汇报配图等装饰性强的图表，支持渐变色、阴影、自由布局
+
+> 输入论文文字/图片 → 自动生成代码 → 编译验证 → 高质量交付
 
 ## 效果展示
 
-| 垂直分层架构图 | 时序交互图 |
-|:---:|:---:|
-| ![fedmedguard](examples/01_fedmedguard.png) | ![crossguard](examples/02_crossguard_sequence.png) |
-| **数据流水线图** | **左右对比图** |
-| ![ml_pipeline](examples/03_ml_pipeline.png) | ![comparison](examples/04_comparison.png) |
-| **中心辐射架构图** | |
-| ![microservice](examples/05_microservice.png) | |
+| 系统架构图 | 时序交互图 | 对比方案图 |
+|:---:|:---:|:---:|
+| ![system_architecture](examples/01_system_architecture.png) | ![sequence_interaction](examples/02_sequence_interaction.png) | ![comparison](examples/03_comparison.png) |
+
+| 数据流水线图 | 技术路线图 | 几何/数学示意图 |
+|:---:|:---:|:---:|
+| ![data_pipeline](examples/04_data_pipeline.png) | ![research_roadmap](examples/05_research_roadmap.png) | ![math_diagram](examples/06_math_diagram.png) |
+
+| 计算流水线图 | 分层架构图 | 研究框架图 |
+|:---:|:---:|:---:|
+| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![research_framework](examples/09_research_framework.png) |
 
 ## 特性
 
-- **文案驱动**：粘贴论文段落，自动分析内容生成画图指令，再转化为 TikZ 代码
-- **图片驱动**：上传已有截图，自动复刻为可编辑的 TikZ 代码
+- **双格式输出**：TikZ 嵌入论文 + draw.io 自由编辑，按需选择
+- **文案驱动**：粘贴论文段落，自动分析内容生成画图指令，再转化为代码
+- **图片驱动**：上传已有截图，自动复刻为可编辑代码
 - **领域自适应**：自动识别论文所属学科，以该领域专家视角设计配图
 - **统一配色**：内置 6 色学术配色方案（蓝/绿/橙/紫/红/灰），全篇视觉一致
-- **多种图表类型**：支持分层架构图、时序图、对比图、流水线图、中心辐射图、数据流转图等
-- **编译验证 + 自动评分**：生成后自动编译验证、13 项缺陷扫描、6 维度评分，不满分自动迭代修改
-- **中文优先**：原生支持中文标签，自动处理字体配置（ctex / ucharclasses 双方案）
+- **多种图表类型**：支持分层架构图、时序图、对比图、流水线图、中心辐射图、数据流转图、技术路线图等
+- **编译验证 + 自动评分**：生成后自动编译验证、缺陷扫描、多维度评分，不满分自动迭代修改
+- **中文优先**：原生支持中文标签，自动处理字体配置
 
 ## 安装
 
@@ -54,13 +62,31 @@
 （附上截图）
 ```
 
+或者指定使用 draw.io 格式：
+
+```
+帮我画一张技术路线图，用 draw.io 格式
+（粘贴论文内容）
+```
+
+> **提示**：首次运行时需要安装字体和 TeX 编译环境，耗时较长，请耐心等待。后续使用会直接复用已创建的环境。
+
 Claude 会自动：
 1. 识别论文领域
-2. 生成详细画图指令
-3. 输出完整 .tex 代码
-4. 编译生成高清 PNG 预览
-5. 自动评分，不达标则迭代修改
-6. 交付 .tex + .png 文件
+2. 选择合适的输出格式（TikZ / draw.io）
+3. 生成详细画图指令
+4. 输出完整代码
+5. 编译验证（TikZ）或生成可编辑文件（draw.io）
+6. 自动评分，不达标则迭代修改
+7. 交付最终文件
+
+## 输出格式对比
+
+| 场景 | 推荐格式 | 理由 |
+|------|---------|------|
+| 嵌入 LaTeX 论文、含数学公式、结构化图表 | **TikZ** | 编译可控，公式精确 |
+| 技术路线图、科研展示图、装饰性强（渐变/阴影） | **draw.io** | 视觉效果好，可拖拽编辑 |
+| 用户明确指定 | 遵循用户要求 | — |
 
 ## 支持的图表类型
 
@@ -72,6 +98,7 @@ Claude 会自动：
 | 数据流水线图 | 水平多阶段 | 数据处理流水线 |
 | 中心辐射图 | 环形布局 | 微服务架构、核心模块交互 |
 | 数据流转图 | 自上而下 | 输入→处理→输出 |
+| 技术路线图 | 多层板块 | 研究框架、技术方案总览 |
 
 ## 配色方案
 
@@ -88,21 +115,25 @@ Claude 会自动：
 
 ## 示例文件
 
-`examples/` 目录包含 5 张完整示例，每张都有 `.tex` 源码和 `.png` 预览：
+`examples/` 目录包含 9 个示例，覆盖多种学术图表类型：
 
-1. **联邦学习架构图** — 三层分层 + 回路箭头 + 独立审计模块
-2. **跨域数据共享时序图** — 四方生命线 + 手绘图标 + TEE 安全飞地高亮
-3. **ML 训练流水线** — 四阶段 + 手绘图标 + 反馈回路
-4. **传统 vs 联邦学习对比** — VS 分隔 + 红绿对比 + 优劣列表
-5. **微服务架构** — 六边形网关 + 环形服务 + 数据库/消息队列
+1. **系统架构图** — 区块链/云端/边缘/感知四层架构，联邦学习 + 微服务网关
+2. **时序交互图** — 多方 ZKP 协议交互，感知用户→边缘节点→区块链→任务发布方
+3. **对比方案图** — 传统群智感知 vs 基于 ZKP 的隐私保护方案，左右并列 + 评估指标
+4. **数据流水线图** — 多模态免疫原性预测，序列/结构/生化三通道→融合→预测
+5. **技术路线图** — 超大规模 MIMO 信道建模技术路线图，多层板块布局
+6. **几何/数学示意图** — 椭圆曲线、Merkle 树、Groth16 验证方程
+7. **计算流水线图** — 源代码→算术电路→R1CS→QAP 多项式，算术化流程
+8. **分层架构图** — IoT 联邦学习系统，感知终端→边缘计算→云端服务→区块链可信层
+9. **研究框架图** — 源-网-荷-储多层协同优化，漏斗形四层研究架构
 
 ## 环境要求
 
-本 Skill 在 Claude.ai 中运行，自动处理编译环境。如需本地编译示例：
+本 Skill 在 Claude.ai 中运行，自动处理编译环境。如需本地编译 TikZ 示例：
 
 - TeX Live（含 `xelatex`）
 - Noto Sans CJK SC 字体
-- ctex 宏包（`texlive-lang-chinese`）或 ucharclasses 宏包
+- ctex 宏包（`texlive-lang-chinese`）
 
 ```bash
 # Ubuntu/Debian
@@ -112,6 +143,8 @@ xelatex -interaction=nonstopmode example.tex
 # 转 PNG
 pdftoppm -png -r 300 example.pdf preview
 ```
+
+draw.io 格式的文件可直接在 [app.diagrams.net](https://app.diagrams.net) 打开编辑。
 
 ## 许可证
 
