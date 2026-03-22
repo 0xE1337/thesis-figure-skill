@@ -23,6 +23,10 @@
 |:---:|:---:|:---:|
 | ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![research_framework](examples/09_research_framework.png) |
 
+| 分层技术路线图（draw.io 模式F） |
+|:---:|
+| ![layered_roadmap](examples/10_layered_roadmap.png) |
+
 ## 特性
 
 - **双格式输出**：TikZ 嵌入论文 + draw.io 自由编辑，按需选择
@@ -99,6 +103,7 @@ Claude 会自动：
 | 中心辐射图 | 环形布局 | 微服务架构、核心模块交互 |
 | 数据流转图 | 自上而下 | 输入→处理→输出 |
 | 技术路线图 | 多层板块 | 研究框架、技术方案总览 |
+| 分层技术路线图 | CSS+SVG 混合分层 | 毕业论文路线图、开题报告（draw.io 模式F） |
 
 ## 配色方案
 
@@ -115,7 +120,7 @@ Claude 会自动：
 
 ## 示例文件
 
-`examples/` 目录包含 9 个示例，覆盖多种学术图表类型：
+`examples/` 目录包含 10 个示例，覆盖多种学术图表类型：
 
 1. **系统架构图** — 区块链/云端/边缘/感知四层架构，联邦学习 + 微服务网关
 2. **时序交互图** — 多方 ZKP 协议交互，感知用户→边缘节点→区块链→任务发布方
@@ -126,6 +131,7 @@ Claude 会自动：
 7. **计算流水线图** — 源代码→算术电路→R1CS→QAP 多项式，算术化流程
 8. **分层架构图** — IoT 联邦学习系统，感知终端→边缘计算→云端服务→区块链可信层
 9. **研究框架图** — 源-网-荷-储多层协同优化，漏斗形四层研究架构
+10. **分层技术路线图（draw.io 模式F）** — 研究背景→问题提出→研究框架→研究内容→结论展望，含 3D 圆柱体网络节点与树状连线，CSS+SVG 混合布局
 
 ## 环境要求
 
