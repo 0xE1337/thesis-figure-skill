@@ -19,13 +19,9 @@
 |:---:|:---:|:---:|
 | ![data_pipeline](examples/04_data_pipeline.png) | ![research_roadmap](examples/05_research_roadmap.png) | ![math_diagram](examples/06_math_diagram.png) |
 
-| 计算流水线图 | 分层架构图 | 研究框架图 |
+| 计算流水线图 | 分层架构图 | 分层技术路线图（draw.io） |
 |:---:|:---:|:---:|
-| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![research_framework](examples/09_research_framework.png) |
-
-| 分层技术路线图（draw.io 模式F） |
-|:---:|
-| ![layered_roadmap](examples/10_layered_roadmap.png) |
+| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![layered_roadmap](examples/10_layered_roadmap.png) |
 
 ## 特性
 
@@ -40,13 +36,19 @@
 
 ## 安装
 
-### 方法一：一键安装（推荐）
+### 方法一：命令行安装（推荐）
+
+```bash
+npx skills add yijingguo/thesis-figure-skill
+```
+
+### 方法二：上传安装
 
 下载 [`thesis-figure-skill.skill`](thesis-figure-skill.skill) 文件，在 Claude 对话中上传，点击 **"Copy to your skills"** 即可。
 
-### 方法二：手动安装
+### 方法三：手动安装
 
-将 `SKILL.md` 文件放入 Claude 的 skills 目录。
+将 `skills/thesis-figure-skill/SKILL.md` 文件放入 Claude 的 skills 目录。
 
 ## 使用方式
 
