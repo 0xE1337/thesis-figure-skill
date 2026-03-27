@@ -39,7 +39,7 @@
 ### 方法一：命令行安装（推荐）
 
 ```bash
-npx skills add yijingguo/thesis-figure-skill
+npx skills add 0xE1337/thesis-figure-skill
 ```
 
 ### 方法二：上传安装
