@@ -30,4 +30,12 @@
 
 ## 经验记录
 
-（Agent 在画图过程中自动追加）
+### [通用] - pgfonlayer 环境名
+- **问题/发现**：背景层环境名是 `\begin{pgfonlayer}{background}`，不是 `\begin{pgfonbackgroundlayer}`。后者会导致编译报错但仍生成异常 PDF。
+- **解决方案**：始终使用 `\pgfdeclarelayer{background}` + `\pgfsetlayers{background,main}` + `\begin{pgfonlayer}{background}`
+- **发现日期**：2026-03-28
+
+### [三栏映射图] - zone style 不能在 pgfonlayer 中使用
+- **问题/发现**：在 `\begin{pgfonlayer}{background}` 中用 `\node[zone, fit=...]` 时，如果 `zone` style 包含 `inner sep` 等参数，可能导致 zone 框不显示。
+- **解决方案**：在 `pgfonlayer` 中直接内联 style（`\fill[dashed, thick, rounded corners=8pt, inner sep=15pt, ...]`），不依赖预定义的 `zone` style。
+- **发现日期**：2026-03-28
