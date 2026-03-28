@@ -77,6 +77,7 @@ description: |
 ⚠️ **ctex 可用性** — 编译前必须检查 `kpsewhich ctex.sty`，不可用则切方案 B（fontspec）
 ⚠️ **`ucharclasses` 方案** — 在 tikz 节点内中英混排时频繁出现 Missing character 错误，禁用
 ⚠️ **draw.io CLI 导出** — `brew install --cask drawio` 安装后可用 `drawio -x -f pdf` 导出，再 `pdftoppm` 转 PNG（PNG 直出有兼容问题，走 PDF 中转）
+⚠️ **输出格式只有两种：TikZ (.tex) 和 draw.io (.drawio)** — 不要输出 HTML/CSS/SVG 等其他格式，它们无法嵌入 LaTeX 论文也无法在 draw.io 中编辑
 ⚠️ **单条 `\draw` + `rounded corners` 画长距离回路** — 路径异常，必须拆分为 3 段独立 `\draw`
 ⚠️ **SVG clip-path + preserveAspectRatio="none" 模拟梯形** — 高度不可控导致布局崩溃，禁用
 ⚠️ **空心描边字 stroke-width ≥ 1.2** — 笔画间隙被填满，字变模糊不清，控制在 0.6-0.8

@@ -64,8 +64,8 @@
 - 左侧编号圆（一/二/三）+ 空心描边竖排分区标题
 - 每层用 Flexbox 分左侧栏（side）+ 右侧内容（body）
 
-**模式 F：分层技术路线图**（CSS + 内嵌SVG混合）★常见论文配图 **★优先用 HTML+CSS+SVG，draw.io XML 为备选**
-> draw.io XML 在模式F场景下存在天然表达力限制：无法绘制无缝 3D 圆柱体（椭圆+矩形拼接有接缝）、空心描边字效果差、散布关键词定位不够自由。因此模式F **首选 HTML+CSS+SVG 混合模式**输出。仅当用户明确要求 .drawio 格式或需要在 app.diagrams.net 中编辑时才用 draw.io XML。
+**模式 F：分层技术路线图**（draw.io XML 实现）★常见论文配图
+> draw.io XML 的模式F注意事项：3D 圆柱体用椭圆+矩形拼接时需注意接缝（侧面矩形的 fill 必须与椭圆一致且无 stroke，靠左右竖线勾勒轮廓）。空心描边字在 draw.io 中用 `fontColor=none;strokeColor=#7B1FA2;` 近似实现，效果不如 SVG 但可接受。
 - 典型结构：研究背景 → 问题提出 → 研究框架 → 论文主题横幅 → 研究内容（含网络节点图）→ 结论展望
 - 左侧紫色竖排分区标签 + 右侧浅灰竖排注释标签
 - 中间内容区：CSS Flexbox 行布局，每行用 `.row > .side-left + .center + .side-right`
