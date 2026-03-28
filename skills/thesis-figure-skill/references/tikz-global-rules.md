@@ -27,7 +27,19 @@
 
 ### 代码规范
 - `standalone` 文档类，`border=25pt`（有外部回路时 35pt）
-- 中文支持优先 `ctex`（`\usepackage[fontset=none]{ctex}` + Noto Sans CJK SC），不可用则退回方案 B：`\usepackage{fontspec}` + `\setmainfont{Noto Sans CJK SC}` + `\setsansfont{Noto Sans CJK SC}`（**不要用 `ucharclasses` 方案**——实测中 `\setDefaultTransitions` 在 tikz 节点内的中英混排场景下频繁出现 Missing character 错误）
+- **CJK 字体可移植性**（关键教训）：
+  - 编译前**必须** `fc-list | grep "字体名"` 确认字体存在
+  - 多平台字体对照表：
+
+    | 平台 | 首选字体 | 备选字体 | LaTeX 配置 |
+    |------|---------|---------|-----------|
+    | macOS | PingFang SC | Heiti SC | `\setCJKmainfont{PingFang SC}` |
+    | Linux | Noto Sans CJK SC | WenQuanYi Micro Hei | `\setCJKmainfont{Noto Sans CJK SC}` |
+    | Windows | Microsoft YaHei | SimHei | `\setCJKmainfont{Microsoft YaHei}` |
+
+  - ⚠️ xelatex 对缺失字体**静默失败**：仍生成 PDF 但中文全丢（只有 Missing character warning，无 error）。编译后必须 `grep "Missing character" *.log` 检查
+  - 中文支持优先 `ctex`（`\usepackage[fontset=none]{ctex}` + 上表字体），不可用则退回方案 B：`\usepackage{fontspec}` + `\setmainfont{...}` + `\setsansfont{...}`
+  - **不要用 `ucharclasses` 方案**——实测中 `\setDefaultTransitions` 在 tikz 节点内的中英混排场景下频繁出现 Missing character 错误
 - 所有节点用 `style` 定义 + `positioning` 相对定位（**几何图例外：允许绝对坐标**）
 - 编译：`xelatex -interaction=nonstopmode`
 - 箭头旁标注用 `tag` 样式（`fill=white`），独立标注用 `annot` 样式（不带 `fill`）
@@ -43,3 +55,18 @@
 - **虚线出口和入口方向选择**（反复踩坑的规则）：出口方向必须指向空白区域，不能指向其他节点所在方向。例如：从 VAE 连到右下方的损失标签，应从 VAE `.south` 向下出框底部再水平右行，而非从 `.west` 水平左行（会穿过左侧节点文字）。入口方向优先选择目标节点的**空闲侧**（没有其他连线的一侧），避免进入方向与已有箭头重叠
 - **虚线出口必须留足间距**：从节点出来后至少走 **1.0cm 以上的直线段**再转弯，否则转弯点紧贴节点边缘看起来很突兀。入口处同理——到达目标节点附近时，先在旁边转弯对齐，再直线进入，形成清晰的 L 型弯折
 - **连线出口/入口选择节点的自然锚点**：向下连接用 `.south`（底部中间），向右用 `.east`，向左用 `.west`。禁止从角落（`.south west` / `.north east`）出发，角落出口看起来不自然。入口同理——从目标节点最近的正面（`.west` / `.north` / `.east`）进入，不从角落进
+
+### 渲染后视觉对比度（关键教训）
+
+代码中看起来合理的参数，渲染成 300dpi PNG 后经常不可见。以下是经过实际渲染验证的最低参数：
+
+| 元素 | 最低可见参数 | 常见错误 |
+|------|-----------|---------|
+| 虚线框 | `line width=1.2pt` + 颜色 `!90` | `!60` 或 `!70` 在浅色背景上消失 |
+| 激活条/窄矩形 | 宽度 ≥ 0.45cm | 0.3cm 在 PNG 中几乎不可见 |
+| 生命线 | `color=xxx!80` | `!60` 在浅色阶段背景上消失 |
+| 连线 | `thick`（0.8pt）+ 颜色对比度足够 | 浅橙/浅黄线在白色背景上消失 |
+| 标签字号 | `\footnotesize` 以上 | `\scriptsize` 的数学公式在 PNG 中不可读 |
+| 标记文字 | `\small\bfseries` 以上（combo标签等） | `\footnotesize` 的 "par"/"loop" 太小 |
+
+**原则**：宁可在代码中感觉"太粗/太深"，也不要在渲染后发现"看不到"。渲染后的视觉效果永远优先于代码中的美感。

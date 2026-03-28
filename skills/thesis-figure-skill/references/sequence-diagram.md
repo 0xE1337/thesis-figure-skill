@@ -68,12 +68,66 @@ msg/.style={-{Stealth[scale=1.0]}, thick, color=#1},
 tag/.style={font=\footnotesize, fill=white, inner sep=2pt, rounded corners=1pt},
 phase/.style={font=\small\bfseries, text=drawRedLine, fill=drawRedFill,
     inner sep=5pt, rounded corners=3pt, draw=drawRedLine, thick},
-lifeline/.style={dashed, thick, color=#1!60},
-activation/.style={fill=#1!25, draw=#1!70, thick, rounded corners=1pt},
+lifeline/.style={dashed, thick, color=#1!80},  % ≥!80，!60在浅色背景上不可见
+activation/.style={fill=#1!30, draw=#1!80, thick, rounded corners=1pt,
+    minimum width=0.45cm},  % 宽度≥0.4cm，0.3cm在300dpi下几乎不可见
 selfcall/.style={-{Stealth[scale=0.9]}, thick, rounded corners=3pt, color=#1},
 note/.style={rectangle, rounded corners=3pt, draw=drawGreyLine!60, fill=drawYellowFill,
     align=left, font=\footnotesize, inner sep=6pt, text width=3.8cm},
 ```
+
+### UML 组合片段（par/loop/alt/opt）
+
+时序图中的组合片段（combo fragment）用于表示并行执行、循环、条件分支等控制逻辑。
+
+**style 定义**：
+```latex
+% 组合片段框 — 线宽≥1.2pt，颜色≥!90，确保在浅色阶段背景上清晰可见
+combo/.style={rectangle, draw=drawGreyLine!90, fill=none, dashed,
+    inner sep=0pt, rounded corners=2pt, line width=1.2pt},
+% 组合片段类型标签（如 "par"、"loop"、"alt"）— 字号用\small加粗，不能太小
+combo_label/.style={rectangle, fill=drawGreyFill, draw=drawGreyLine!90,
+    font=\small\bfseries, inner sep=4pt, rounded corners=2pt},
+% 条件分隔线（alt 框内的虚线）— 颜色≥!80
+combo_divider/.style={dashed, drawGreyLine!80, line width=1.0pt},
+% 条件标签（如 "[验证通过]"、"[验证失败]"）
+combo_guard/.style={font=\footnotesize\itshape, text=drawGreyLine},
+```
+
+**绘制规则**：
+1. **combo 框坐标**：左边界 = 最左参与方 x - 1.0cm，右边界 = 最右参与方 x + 2.5cm，上边界 = 第一条消息 y - 0.3cm，下边界 = 最后一条消息 y + 0.3cm
+2. **类型标签位置**：combo 框左上角内侧（`combo_label` at 框.north west + (0.3, -0.15)）
+3. **alt 分隔线**：水平虚线从框左边界到右边界，y = 两个分支之间的中点
+4. **条件守卫标签**：`[条件]` 放在分隔线下方 0.2cm，左对齐（x = 框左边界 + 1.0cm）
+5. **par 框**：左右边界紧贴相关参与方（不要延伸到无关参与方），分隔线表示并行分支
+6. **loop 框**：类型标签写 `loop [条件]`，注意中英文混排时数学模式的空格：用 `loop [$k$ 轮]` 而非 `loop $[k$~轮$]$`
+7. **嵌套**：combo 框可以嵌套，内层框缩进 0.3cm，使用更浅的虚线颜色
+
+### 激活条坐标计算（关键规则）
+
+激活条的 y 坐标必须**使用与消息相同的绝对 y 值**，不要用相对偏移手动估算。
+
+**计算公式**：
+- 激活条起始 y = 该参与方**收到第一条消息**的 y - 0.2cm
+- 激活条结束 y = 该参与方**发出最后一条消息**的 y + 0.2cm
+- 激活条宽度 = 0.45cm（⚠️ 0.3cm 在 300dpi 渲染后几乎不可见），中心 x = 参与方 x
+
+**绘制方式**：
+```latex
+% 推荐：使用绝对 y 坐标，与消息行精确对齐
+\fill[activation=blue] ([xshift=-0.15cm]P.south |- 0,-3.0)
+    rectangle ([xshift=0.15cm]P.south |- 0,-8.5);
+% 其中 -3.0 和 -8.5 是该参与方首尾消息的 y 坐标 ± 0.2cm
+```
+
+**禁止**：用 `++(0, -offset) rectangle ++(0.3, -height)` 的相对偏移方式——数值是手动估算的，极易导致激活条与消息行不对齐。
+
+### 自调用弧方向选择
+
+- **最右侧参与方**的自调用弧**必须向左伸出**（而非向右），否则弧和标签会超出画布右边界
+- 具体做法：从激活条左侧边缘出发，向左伸出 1.5cm 形成 U 型弧，标签放在弧的左侧
+- 其他参与方默认向右伸出
+- 自调用弧标签的 `text width` 控制在 3.0cm 以内，避免超出 border
 
 ### 自检清单（时序图专用）
 
@@ -82,6 +136,20 @@ note/.style={rectangle, rounded corners=3pt, draw=drawGreyLine!60, fill=drawYell
 - [ ] 每个阶段内垂直间距 ≤ 0.6cm，阶段间 ≤ 1.0cm
 - [ ] 无大面积空白区域（注释框已填充到生命线之间）
 - [ ] 自调用弧宽度 ≥ 2.0cm
+- [ ] **最右侧参与方的自调用弧向左伸出**，标签不超出 border
 - [ ] 回路线 rail 在阶段标签外侧，标签水平放置
 - [ ] border ≥ 25pt，回路线不被裁切
 - [ ] 阶段背景色覆盖完整，无间隙无重叠
+- [ ] **激活条 y 坐标使用绝对值**，与首尾消息行精确对齐
+- [ ] **combo 框左右边界紧贴相关参与方**，不过度延伸
+- [ ] combo 标签中的数学公式排版正确（无多余空格）
+- [ ] `\shortstack` 多行文字行距充足（用 `\\[3pt]` 增加行距）
+- [ ] **编译后 grep "Missing character" 检查字体是否缺失**
+- [ ] **渲染后视觉审查**（必须打开 PNG 查看，不可仅凭代码判断）：
+  - [ ] 所有 5 条生命线在阶段背景色上清晰可见（颜色 ≥ !80）
+  - [ ] 激活条在 300dpi 下肉眼可辨（宽度 ≥ 0.45cm）
+  - [ ] combo 框虚线在阶段背景上清晰可见（线宽 ≥ 1.2pt，颜色 ≥ !90）
+  - [ ] combo 类型标签（par/loop/alt）字号足够大（≥ \small）
+  - [ ] 每个参与方列都有足够的交互内容，无大面积空列
+  - [ ] 自调用弧清晰可见，标签可读
+  - [ ] 整图纵横比 ≤ 1:1.5（过长则压缩阶段间距或增加横向宽度）

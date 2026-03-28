@@ -75,7 +75,7 @@ description: |
 ⚠️ **`\texttt` 包裹中文** — 会报错，纯英文代码才用 `\texttt` 或 `code_block` style
 ⚠️ **ctex 可用性** — 编译前必须检查 `kpsewhich ctex.sty`，不可用则切方案 B（fontspec）
 ⚠️ **`ucharclasses` 方案** — 在 tikz 节点内中英混排时频繁出现 Missing character 错误，禁用
-⚠️ **draw.io 无 CLI 渲染** — 必须同时生成 .drawio 文件和 HTML 预览文件
+⚠️ **draw.io CLI 导出** — `brew install --cask drawio` 安装后可用 `drawio -x -f pdf` 导出，再 `pdftoppm` 转 PNG（PNG 直出有兼容问题，走 PDF 中转）
 ⚠️ **单条 `\draw` + `rounded corners` 画长距离回路** — 路径异常，必须拆分为 3 段独立 `\draw`
 ⚠️ **SVG clip-path + preserveAspectRatio="none" 模拟梯形** — 高度不可控导致布局崩溃，禁用
 ⚠️ **空心描边字 stroke-width ≥ 1.2** — 笔画间隙被填满，字变模糊不清，控制在 0.6-0.8
@@ -121,14 +121,58 @@ description: |
 
 **步骤②**：根据步骤①确定的图表类型，从 `references/` 加载对应的专项规则文件。同时读取 `references/experience-log.md` 获取该类型的已有经验。
 
-**步骤③**：按规则生成代码。生成前自检：`\documentclass` 第一行、color 定义在 `\begin{document}` 前、无未闭合括号、无 `rotate=90` 中文。
+**步骤③**：按规则生成代码。生成前自检：`\documentclass` 第一行、color 定义在 `\begin{document}` 前、无未闭合括号、无 `rotate=90` 中文、**连线数量与画图指令一致**（逐条核对，不多不少）。
 
-**步骤④**：TikZ 用 `xelatex -interaction=nonstopmode` 编译，`pdftoppm -png -r 300` 转预览图。draw.io 直接在浏览器预览 HTML。
+**步骤④**：TikZ 编译验证流程：
+1. **字体可用性检查**（编译前必做）：运行 `fc-list | grep "字体名"` 确认 CJK 字体存在。按平台优先级选择：macOS → PingFang SC / Heiti SC；Linux → Noto Sans CJK SC；Windows → SimHei / Microsoft YaHei。如果模板中的字体不可用，**在编译前替换为本机可用字体**，不要等编译后才发现。
+2. **编译**：`xelatex -interaction=nonstopmode`
+3. **编译日志检查**（关键）：编译后必须 `grep "Missing character" *.log`。xelatex 对缺失字体的处理是 warning 而非 error——PDF 仍会生成但中文全部丢失，这是**静默失败**，不检查 log 会误以为编译成功。
+4. **转预览图**：`pdftoppm -png -r 300` 转 PNG，检查文字可读性。
+draw.io 验证流程：
+1. **XML 合法性**：`xmllint --noout file.drawio`
+2. **导出预览图**：`drawio -x -f pdf -o output.pdf input.drawio && pdftoppm -png -r 300 output.pdf output-preview`（draw.io CLI 的 PNG 直出在部分环境有兼容问题，PDF 转 PNG 更稳定）
+3. 如果 `drawio` 命令不可用，提示用户 `brew install --cask drawio` 安装
+4. 检查预览图中的文字可读性、布局合理性
 
-**步骤⑤**：六维度评分（各 1-5 分）：完整性、准确性、布局合理、连线清晰、配色统一、文字可读。
-- **总分 = 30 且无缺陷** → 交付
-- **总分 < 30** → 继续迭代
+**步骤⑤**：**必须查看渲染出的 PNG 图片后再评分**——禁止仅凭代码逻辑打分。
+
+评分流程（不可跳过任何一步）：
+1. **用 Read 工具打开渲染出的 PNG 文件**（TikZ 用 pdftoppm 转的 PNG，draw.io 用 drawio 导出的 PNG）。如果无法生成 PNG，则此步骤阻塞，不可跳过直接评分。
+2. **逐项视觉审查**以下清单（每项必须基于你在 PNG 中实际看到的内容，不可基于代码推测）：
+
+**视觉审查清单（渲染图专用，代码检查不替代这些）**：
+- [ ] **生命线/连线可见性**：所有连线在背景色上是否清晰可辨？颜色对比度是否足够？（浅色线+浅色背景=不可见，必须加深颜色或加粗线宽）
+- [ ] **激活条/标记可见性**：激活条、自调用弧等细节元素在 300dpi 下是否能看到？宽度是否足够？
+- [ ] **文字可读性**：所有文字标签（包括数学公式、标注、图例）在 300dpi PNG 中是否清晰可读？最小文字是否过小？
+- [ ] **空白区域**：是否存在大面积无内容区域（宽 > 3cm 且高 > 2cm）？某一列/行是否内容过少显得空旷？
+- [ ] **元素缺失**：画图指令中列出的每个模块、每条连线、每个标注在渲染图中是否都能找到？（逐条核对）
+- [ ] **重叠遮挡**：是否有文字被连线、框体或其他文字遮挡？
+- [ ] **整图比例**：纵横比是否合理？是否过窄过长或过宽过扁？放入论文中是否自然？
+- [ ] **视觉层次**：核心模块是否比辅助模块更醒目？连线粗细/颜色是否能区分主次？
+
+3. **基于视觉审查结果打分**（六维度，各 1-5 分）：
+
+| 维度 | 评分依据（必须基于 PNG 所见） |
+|------|--------------------------|
+| 完整性 | PNG 中能看到画图指令中的所有模块和连线 |
+| 准确性 | 文字内容正确，模块归属关系与指令一致 |
+| 布局合理 | 无大面积空白，间距均匀，比例协调 |
+| 连线清晰 | 每条连线清晰可辨，走向自然，无穿越遮挡 |
+| 配色统一 | 颜色对比度足够，同类元素颜色一致 |
+| 文字可读 | 最小文字在 300dpi 下可读，无重叠遮挡 |
+
+**评分规则**：
+- **总分 = 30 且视觉审查清单全部通过** → 交付
+- **总分 < 30 或任一审查项未通过** → 继续迭代（定位问题 → 修改代码 → 重新编译 → 重新查看 PNG → 重新评分）
 - **总分 < 25** → 重大问题，回到步骤①重新设计
+
+**常见"代码正确但渲染不佳"的陷阱**（agent 自评满分但实际不合格的典型原因）：
+- 激活条宽度 0.3cm 在代码中看起来合理，但渲染后在 300dpi PNG 中几乎不可见 → 加宽到 0.4-0.5cm
+- 生命线用 `color=xxx!60`（60% 透明度），在浅色阶段背景上几乎消失 → 改为 `!80` 或更深
+- combo 框用浅灰虚线，在浅色阶段背景上看不到 → 加深颜色或加粗线宽
+- 连线用浅橙/浅黄色在白色背景上对比度不足 → 用更深的颜色
+- 右侧参与方/模块很少有交互，导致该列空旷 → 增加注释框或重新规划参与方顺序
+- 整图纵横比 1:2.5 以上，嵌入论文时会被压缩到很小 → 控制纵向长度或增加横向宽度
 
 **步骤⑦**：画图完成后，如果过程中遇到了需要 2 次以上尝试才解决的问题，或发现了有效技巧，追加到 `references/experience-log.md`。
 
@@ -171,10 +215,12 @@ description: |
 \documentclass[tikz,border=25pt]{standalone}
 \usepackage{tikz}
 % 如在 Overleaf 编译，替换为 \usepackage{ctex}
-% 方案B（无ctex时）：\usepackage{fontspec} + \setmainfont{Noto Sans CJK SC} + \setsansfont{Noto Sans CJK SC}
+% 方案B（无ctex时）：\usepackage{fontspec} + \setmainfont{...} + \setsansfont{...}
+% ⚠️ 编译前必须 fc-list | grep "字体名" 确认字体存在！
+% 字体优先级：macOS → PingFang SC; Linux → Noto Sans CJK SC; Windows → SimHei
 \usepackage[fontset=none]{ctex}
-\setCJKmainfont{Noto Sans CJK SC}
-\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmainfont{PingFang SC}   % ← 按本机可用字体替换
+\setCJKsansfont{PingFang SC}   % ← 同上
 \usetikzlibrary{shapes, arrows.meta, positioning, fit, backgrounds, calc, shadows}
 
 % 色板（见上）
