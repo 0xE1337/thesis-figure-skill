@@ -49,3 +49,8 @@
 - **问题/发现**：尝试用 `rotate=90` 放置中文侧栏标签，触发了 xelatex 不可读色块问题。
 - **解决方案**：所有中文标注必须水平放置，侧栏标签用多行 `\shortstack` 替代旋转。
 - **发现日期**：2026-03-29
+
+### [通用] - stmaryrd 包提供双方括号符号
+- **问题/发现**：`\llbracket` / `\rrbracket`（语义双方括号⟦⟧）需要 `stmaryrd` 包，否则编译报错 "Undefined control sequence"。
+- **解决方案**：在 preamble 加 `\usepackage{stmaryrd}`。常见于密码学/形式化验证领域的图。
+- **发现日期**：2026-03-29
