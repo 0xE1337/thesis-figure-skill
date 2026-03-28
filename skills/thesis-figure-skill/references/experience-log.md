@@ -39,3 +39,13 @@
 - **问题/发现**：在 `\begin{pgfonlayer}{background}` 中用 `\node[zone, fit=...]` 时，如果 `zone` style 包含 `inner sep` 等参数，可能导致 zone 框不显示。
 - **解决方案**：在 `pgfonlayer` 中直接内联 style（`\fill[dashed, thick, rounded corners=8pt, inner sep=15pt, ...]`），不依赖预定义的 `zone` style。
 - **发现日期**：2026-03-28
+
+### [通用] - amsmath 包缺失导致 \boldsymbol 未定义
+- **问题/发现**：对比方案图中使用 `\boldsymbol` 但未加载 `amsmath` 包，导致编译报错。
+- **解决方案**：在 preamble 中加 `\usepackage{amsmath, amssymb}`，尤其是含数学公式的图。
+- **发现日期**：2026-03-29
+
+### [多实例汇聚图] - rotate=90 中文侧栏标签
+- **问题/发现**：尝试用 `rotate=90` 放置中文侧栏标签，触发了 xelatex 不可读色块问题。
+- **解决方案**：所有中文标注必须水平放置，侧栏标签用多行 `\shortstack` 替代旋转。
+- **发现日期**：2026-03-29
