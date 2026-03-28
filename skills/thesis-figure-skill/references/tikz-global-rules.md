@@ -43,7 +43,24 @@
 - 所有节点用 `style` 定义 + `positioning` 相对定位（**几何图例外：允许绝对坐标**）
 - 编译：`xelatex -interaction=nonstopmode`
 - 箭头旁标注用 `tag` 样式（`fill=white`），独立标注用 `annot` 样式（不带 `fill`）
-- **回路必须拆分为 3 段独立 `\draw`**，禁止单条 `\draw` + `rounded corners` 画长距离回路
+- **普通跨层连线必须用单条 `\draw` + 路径点画连续弧线**，禁止拆成多段 `\draw`——多段拆分会在弯折点产生箭头头/尾拼接的丑陋痕迹。正确做法：
+  ```latex
+  % ✅ 正确：单条 \draw，弯折自然连续
+  \draw[arrow, rounded corners=6pt]
+      (source.south) -- (source.south |- 0,-5) -- (target.west |- 0,-5) -- (target.west);
+  % ❌ 错误：拆成多段，弯折点有箭头拼接
+  \draw[arrow] (source.south) -- (0,-5);
+  \draw[arrow] (0,-5) -- (target.west);
+  ```
+- **只有长距离回路（U型绕行 > 10cm）才拆分为 3 段独立 `\draw`**——因为单条 `\draw` + `rounded corners` 画长距离回路时路径可能异常。拆分时中间段不带箭头（只有最后一段带箭头）：
+  ```latex
+  \draw[dashed, thick, color=drawRedLine, rounded corners=6pt]
+      (source.west) -- (-3, source_y);  % 段1：无箭头
+  \draw[dashed, thick, color=drawRedLine]
+      (-3, source_y) -- (-3, target_y);  % 段2：竖直段，无箭头
+  \draw[-{Stealth}, dashed, thick, color=drawRedLine, rounded corners=6pt]
+      (-3, target_y) -- (target.west);  % 段3：带箭头
+  ```
 - 回路终止于分区框边界（如 `target_zone.west`），不穿入框内
 - 多条回路分配到不同侧，同侧间距 ≥ 1.5cm
 - 跨区箭头在空白区域中转（L 型路径），不直接刺穿虚线框
@@ -91,3 +108,11 @@
 | 标记文字 | `\small\bfseries` 以上（combo标签等） | `\footnotesize` 的 "par"/"loop" 太小 |
 
 **原则**：宁可在代码中感觉"太粗/太深"，也不要在渲染后发现"看不到"。渲染后的视觉效果永远优先于代码中的美感。
+
+### 连线标签与文字防冲突（反复踩坑）
+
+**连线标签（tag）不能骑在其他节点的文字上方**——这是最常见的视觉问题：
+- 跨栏/跨层连线的 `tag` 标签放在连线的**空白区域段**上，不放在经过节点附近的段上
+- 如果连线经过密集区域（多个节点之间），标签放在连线的起点或终点附近（远离密集区）
+- **渲染后逐条检查**：每个 tag 标签下方是否有其他节点的文字被遮挡
+- 如果无法避免冲突，缩短标签文字或移动标签到连线的另一侧（`swap` 选项）
