@@ -24,19 +24,48 @@
 
 ### 配色方案
 
-**科研展示图默认用粉灰配色**（和小枫老师参考图一致）：
-- 背景：白色或 #faf8f6（微暖灰），嵌套层 rgba 粉/灰/紫递进
-- 强调文字/空心字描边：#C2185B（品红）、#E91E63（粉红）
-- 深色横幅：`linear-gradient(135deg, #7B1FA2, #9C27B0)`（深紫渐变白字）
-- 标题胶囊（深底白字）：`linear-gradient(135deg, #5C6BC0, #7986CB)`（蓝紫）
-- 横幅：#E8EAF6/#7986CB（蓝灰）、#E0D8F0/#A090C0（紫灰）
-- 棕色系（电磁/硬件模块）：#EFEBE9/#8D6E63/#BCAAA4
-- 粉色强调标签：#FCE4EC/#F48FB1/#C2185B
-- 编号圆：`linear-gradient(135deg, #FFD54F, #FFB300)` + border #E65100
-- 普通文字：#333（深）、#555（中深）、#666（中）、#999（浅）、#bbb/#ccc（极浅散布词）
-- 标签背景：#FCE4EC（粉）、#F8E0EC（浅粉）
-- 流水线圆：`linear-gradient(145deg, #F0E8F5, #E8DDF0)` + border #8E6CA8
-- 箭头流渐变：#F3E5F5 → #E8EAF6 → #F8BBD0 → #CE93D8
+**不要每张图都用紫色主题**——根据论文领域选择合适的配色方案。以下提供 4 套经过审美验证的配色，每套都包含主色、辅色、强调色、背景色：
+
+**方案 A：学术蓝灰**（适合：计算机网络、系统架构、工程类）
+- 主色：#1565C0（深蓝）→ 标题横幅、主分组框边框
+- 辅色：#E3F2FD（浅蓝）→ 分组框背景、卡片背景
+- 强调色：#FF6F00（琥珀橙）→ 核心模块、编号圆、强调标签
+- 中性色：#ECEFF1/#CFD8DC（蓝灰）→ 辅助区域、子分组
+- 文字：#1A237E（深蓝黑）→ 标题；#37474F（深灰蓝）→ 正文
+- 标题胶囊：fillColor=#1565C0; gradientColor=#1976D2; fontColor=#FFFFFF
+
+**方案 B：粉紫渐变**（适合：AI/深度学习、数据科学、生物信息）
+- 主色：#7B1FA2（深紫）→ 标题横幅
+- 辅色：#F3E5F5（浅紫）/ #FCE4EC（浅粉）→ 背景
+- 强调色：#C2185B（品红）→ 空心字、强调标签
+- 标题胶囊：fillColor=#5C6BC0; gradientColor=#7986CB; fontColor=#FFFFFF
+- 编号圆：fillColor=#FFD54F; strokeColor=#E65100（金黄）
+
+**方案 C：翠绿自然**（适合：物联网、智慧农业、环境科学、可持续发展）
+- 主色：#2E7D32（深绿）→ 标题横幅
+- 辅色：#E8F5E9（浅绿）/ #F1F8E9（浅黄绿）→ 背景
+- 强调色：#E65100（深橙）→ 核心模块、警告标签
+- 中性色：#EFEBE9（暖灰）→ 辅助区域
+- 标题胶囊：fillColor=#2E7D32; gradientColor=#43A047; fontColor=#FFFFFF
+
+**方案 D：科技深色**（适合：安全、密码学、区块链、网络攻防）
+- 主色：#263238（深蓝灰）→ 标题横幅
+- 辅色：#ECEFF1（冰灰）/ #E8EAF6（淡蓝灰）→ 背景
+- 强调色：#D32F2F（警示红）→ 安全告警、攻击路径
+- 辅助强调：#00897B（青绿）→ 防御措施、安全模块
+- 标题胶囊：fillColor=#263238; gradientColor=#37474F; fontColor=#FFFFFF
+
+**配色选择规则**：
+1. 在画图指令的"领域识别"步骤中确定论文领域
+2. 按上表选择最匹配的方案（默认方案A，不再默认紫色）
+3. 整图只用一套方案的颜色，不要跨方案混搭
+4. 如果用户有明确的颜色偏好或参考图，优先按用户要求
+
+**配色审美原则**：
+- **同一张图最多用 3 种主色**（主色+辅色+强调色），过多颜色显得杂乱
+- **强调色只用在 1-2 个核心元素上**，不要到处都是强调色
+- **背景色要够浅**（接近白色），保证文字对比度
+- **相邻分组用同色系深浅区分**，而非不同色系——如浅蓝/中蓝/深蓝，而非蓝/绿/橙
 
 如用户要求用 TikZ 统一色板，则按 drawBlueFill/Line 等映射。
 
@@ -318,7 +347,7 @@ draw.io 路线图（尤其是模式F）的价值在于**丰富的视觉层次和
 | 强调标签（粉色） | `rounded=1;fillColor=#FCE4EC;strokeColor=#F48FB1;fontColor=#C2185B;fontStyle=1;arcSize=30;` |
 | 内容卡片 | `rounded=1;fillColor=#FFFFFF;strokeColor=#BDBDBD;shadow=1;` |
 | 编号圆（金黄） | `ellipse;fillColor=#FFD54F;strokeColor=#E65100;fontColor=#E65100;fontStyle=1;strokeWidth=3;` |
-| 散布关键词（红） | `text;html=1;fontColor=#C2185B;fontStyle=3;fontSize=9;` |
+| 散布关键词（强调色） | `text;html=1;fontColor=【方案强调色】;fontStyle=3;fontSize=9;` |
 | 散布关键词（灰） | `text;html=1;fontColor=#888;fontStyle=2;fontSize=9;` |
 | 竖排文字 | `text;html=1;horizontal=0;fontSize=10;fontStyle=1;` |
 | 入口/出口框 | `rounded=1;fillColor=#FFFFFF;strokeColor=#999;fontSize=12;` |
