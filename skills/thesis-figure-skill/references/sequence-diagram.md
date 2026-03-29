@@ -65,7 +65,9 @@ participant/.style={rectangle, rounded corners=4pt, align=center,
     minimum height=1.1cm, minimum width=2.8cm,
     drop shadow={opacity=0.15}, thick, font=\small\bfseries},
 msg/.style={-{Stealth[scale=1.0]}, thick, color=#1},
-tag/.style={font=\footnotesize, fill=white, inner sep=2pt, rounded corners=1pt},
+tag/.style={font=\footnotesize, inner sep=2pt, rounded corners=1pt},
+% ⚠️ tag 默认无背景（透明），只有当标签确实与生命线重叠且影响可读性时，
+% 才加 fill=white, fill opacity=0.85。大多数消息标签在箭头上方，不需要白底。
 phase/.style={font=\small\bfseries, text=drawRedLine, fill=drawRedFill,
     inner sep=5pt, rounded corners=3pt, draw=drawRedLine, thick},
 lifeline/.style={dashed, thick, color=#1!80},  % ≥!80，!60在浅色背景上不可见
