@@ -23,16 +23,19 @@
 |:---:|:---:|:---:|
 | ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![layered_roadmap](examples/10_layered_roadmap.png) |
 
+> 以上示例均由本 Skill 自动生成，包含编译验证、渲染审查、自动评分全流程。
+
 ## 特性
 
 - **双格式输出**：TikZ 嵌入论文 + draw.io 自由编辑，按需选择
 - **文案驱动**：粘贴论文段落，自动分析内容生成画图指令，再转化为代码
 - **图片驱动**：上传已有截图，自动复刻为可编辑代码
 - **领域自适应**：自动识别论文所属学科，以该领域专家视角设计配图
-- **统一配色**：内置 6 色学术配色方案（蓝/绿/橙/紫/红/灰），全篇视觉一致
-- **多种图表类型**：支持分层架构图、时序图、对比图、流水线图、中心辐射图、数据流转图、技术路线图等
-- **编译验证 + 自动评分**：生成后自动编译验证、缺陷扫描、多维度评分，不满分自动迭代修改
-- **中文优先**：原生支持中文标签，自动处理字体配置
+- **统一配色**：TikZ 内置 6 色学术配色方案；draw.io 提供 4 套领域主题配色（学术蓝灰/粉紫渐变/翠绿自然/科技深色），根据论文领域自动选择
+- **12+ 种图表类型**：分层架构图、时序图、对比图、流水线图、三栏映射图、几何数学图、多实例汇聚图、电路原理图、混合图、draw.io 路线图等
+- **编译验证 + 渲染审查 + 自动评分**：生成后自动编译、转 PNG、基于渲染图视觉审查（非代码审查）、六维度评分，不满分自动迭代修改
+- **设计师级审查**：三遍法审查（整体感觉→逐元素→连线路径），像人一样空间推理，发现重叠/碰撞/不自然的布局
+- **中文优先**：原生支持中文标签，多平台 CJK 字体自动检测（macOS PingFang SC / Linux Noto Sans CJK SC / Windows SimHei）
 - **画图哲学驱动**：四步思考循环（定义成功标准→选起点→过程校验→完成判断），对抗模型惯性
 - **渐进式规则加载**：核心规则常驻，专项规则按图表类型按需加载，节省上下文 token
 - **经验自动沉淀**：画图过程中的踩坑经验自动记录，后续复用越画越顺
@@ -108,7 +111,7 @@ Claude 会自动：
 | 中心辐射图 | 环形布局 | 微服务架构、核心模块交互 |
 | 数据流转图 | 自上而下 | 输入→处理→输出 |
 | 技术路线图 | 多层板块 | 研究框架、技术方案总览 |
-| 分层技术路线图 | CSS+SVG 混合分层 | 毕业论文路线图、开题报告（draw.io 模式F） |
+| 分层技术路线图 | 多层板块 | 毕业论文路线图、开题报告（draw.io 模式F） |
 
 ## 配色方案
 
@@ -123,6 +126,17 @@ Claude 会自动：
 | 红色 | `#F8CECC` | `#B85450` | 关键操作、警告 |
 | 灰色 | `#F5F5F5` | `#666666` | 辅助服务、存储 |
 
+### draw.io 领域配色方案
+
+根据论文所属领域自动选择：
+
+| 方案 | 名称 | 适用领域 |
+|------|------|---------|
+| A | 学术蓝灰 | 计算机、工程、通用学术 |
+| B | 粉紫渐变 | 生物医学、心理学 |
+| C | 翠绿自然 | 环境科学、农业、生态 |
+| D | 科技深色 | 网络安全、区块链、硬件 |
+
 ## 示例文件
 
 `examples/` 目录包含 10 个示例，覆盖多种学术图表类型：
@@ -136,18 +150,39 @@ Claude 会自动：
 7. **计算流水线图** — 源代码→算术电路→R1CS→QAP 多项式，算术化流程
 8. **分层架构图** — IoT 联邦学习系统，感知终端→边缘计算→云端服务→区块链可信层
 9. **研究框架图** — 源-网-荷-储多层协同优化，漏斗形四层研究架构
-10. **分层技术路线图（draw.io 模式F）** — 研究背景→问题提出→研究框架→研究内容→结论展望，含 3D 圆柱体网络节点与树状连线，CSS+SVG 混合布局
+10. **分层技术路线图（draw.io 模式F）** — 研究背景→问题提出→研究框架→研究内容→结论展望，含 3D 圆柱体网络节点与树状连线，draw.io 多层板块布局
 
 ## 环境要求
 
-本 Skill 在 Claude.ai 中运行，自动处理编译环境。如需本地编译 TikZ 示例：
+本 Skill 在 Claude Code 中运行，自动处理编译环境。如需本地编译 TikZ 示例：
 
 - TeX Live（含 `xelatex`）
-- Noto Sans CJK SC 字体
-- ctex 宏包（`texlive-lang-chinese`）
+- CJK 中文字体（macOS 自带 PingFang SC，Linux 需安装 Noto Sans CJK SC，Windows 使用 SimHei）
+- ctex 宏包
+- poppler-utils（用于 PDF 转 PNG）
+- draw.io Desktop（可选，用于 draw.io 格式导出）
+
+### macOS（推荐）
 
 ```bash
-# Ubuntu/Debian
+# 安装 TeX Live
+brew install --cask mactex-no-gui
+# 安装 poppler（提供 pdftoppm）
+brew install poppler
+# 安装 draw.io Desktop（可选，用于 draw.io 格式导出）
+brew install --cask drawio
+
+# 编译 TikZ
+xelatex -interaction=nonstopmode example.tex
+# 转 PNG（300dpi）
+pdftoppm -png -r 300 example.pdf preview
+```
+
+> macOS 自带 PingFang SC 字体，无需额外安装中文字体。
+
+### Ubuntu/Debian
+
+```bash
 sudo apt-get install texlive-xetex texlive-lang-chinese fonts-noto-cjk poppler-utils
 # 编译
 xelatex -interaction=nonstopmode example.tex
@@ -155,7 +190,7 @@ xelatex -interaction=nonstopmode example.tex
 pdftoppm -png -r 300 example.pdf preview
 ```
 
-draw.io 格式的文件可直接在 [app.diagrams.net](https://app.diagrams.net) 打开编辑。
+draw.io 格式的文件可直接在 [app.diagrams.net](https://app.diagrams.net) 打开编辑，也可用 draw.io Desktop 导出 PDF/PNG。
 
 ## 许可证
 
