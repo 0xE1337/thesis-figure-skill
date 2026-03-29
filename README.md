@@ -19,9 +19,13 @@
 |:---:|:---:|:---:|
 | ![data_pipeline](examples/04_data_pipeline.png) | ![research_roadmap](examples/05_research_roadmap.png) | ![math_diagram](examples/06_math_diagram.png) |
 
-| 计算流水线图 | 分层架构图 | 分层技术路线图（draw.io） |
+| 计算流水线图 | 分层架构图 | 研究框架图 |
 |:---:|:---:|:---:|
-| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![layered_roadmap](examples/10_layered_roadmap.png) |
+| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![research_framework](examples/09_research_framework.png) |
+
+| 分层技术路线图（draw.io） | 编译器优化流程图 | 侧栏+中心嵌套图（draw.io） |
+|:---:|:---:|:---:|
+| ![layered_roadmap](examples/10_layered_roadmap.png) | ![compiler_pipeline](examples/11_compiler_pipeline.png) | ![sidebar_center](examples/12_sidebar_center.png) |
 
 > 以上示例均由本 Skill 自动生成，包含编译验证、渲染审查、自动评分全流程。
 
@@ -139,18 +143,20 @@ Claude 会自动：
 
 ## 示例文件
 
-`examples/` 目录包含 10 个示例，覆盖多种学术图表类型：
+`examples/` 目录包含 12 个示例，覆盖多种学术图表类型：
 
 1. **系统架构图** — 区块链/云端/边缘/感知四层架构，联邦学习 + 微服务网关
-2. **时序交互图** — 多方 ZKP 协议交互，感知用户→边缘节点→区块链→任务发布方
+2. **时序交互图** — 微服务服务发现与注册，分段激活条展示忙/闲交替，含 alt 组合片段
 3. **对比方案图** — 传统群智感知 vs 基于 ZKP 的隐私保护方案，左右并列 + 评估指标
-4. **数据流水线图** — 多模态免疫原性预测，序列/结构/生化三通道→融合→预测
+4. **数据流水线图** — 点云 3D 目标检测，LiDAR→体素化→3D 骨干→BEV 检测，含树状扇出和跳跃连接
 5. **技术路线图** — 超大规模 MIMO 信道建模技术路线图，多层板块布局
-6. **几何/数学示意图** — 椭圆曲线、Merkle 树、Groth16 验证方程
+6. **几何/数学示意图** — 二维格空间几何，LLL 约简算法向量可视化 + Gram-Schmidt 正交化公式
 7. **计算流水线图** — 源代码→算术电路→R1CS→QAP 多项式，算术化流程
 8. **分层架构图** — IoT 联邦学习系统，感知终端→边缘计算→云端服务→区块链可信层
 9. **研究框架图** — 源-网-荷-储多层协同优化，漏斗形四层研究架构
-10. **分层技术路线图（draw.io 模式F）** — 研究背景→问题提出→研究框架→研究内容→结论展望，含 3D 圆柱体网络节点与树状连线，draw.io 多层板块布局
+10. **分层技术路线图（draw.io 模式F）** — 智慧农业物联网技术路线图，翠绿自然配色方案，研究背景→问题提出→研究框架→研究内容→结论展望
+11. **编译器优化流程图** — 多阶段优化 Pass 流程，源码 IR→常量折叠→死代码消除→寄存器分配→目标码，含代码块和菱形判断节点
+12. **侧栏+中心嵌套图（draw.io 模式D）** — 网络安全威胁检测框架，技术突破侧栏+多层嵌套核心引擎+应用场景侧栏，科技深色配色方案
 
 ## 环境要求
 
