@@ -54,3 +54,8 @@
 - **问题/发现**：`\llbracket` / `\rrbracket`（语义双方括号⟦⟧）需要 `stmaryrd` 包，否则编译报错 "Undefined control sequence"。
 - **解决方案**：在 preamble 加 `\usepackage{stmaryrd}`。常见于密码学/形式化验证领域的图。
 - **发现日期**：2026-03-29
+
+### [时序图] - 生命线必须最后绘制避免被遮挡
+- **问题/发现**：生命线虚线被阶段背景 fill、combo 框、注释框遮挡——TikZ 按代码顺序绘制，后画的在上层。
+- **解决方案**：将所有 `\draw[lifeline=...]` 移到 `\end{tikzpicture}` 前最后位置。
+- **发现日期**：2026-03-29
