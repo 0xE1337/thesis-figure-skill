@@ -6,3 +6,4 @@
 *.fdb_latexmk
 *.pdf
 .DS_Store
+.worktrees/
