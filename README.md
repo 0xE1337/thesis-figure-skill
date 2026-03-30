@@ -1,5 +1,13 @@
 # thesis-figure-skill
 
+**[中文](#中文) | [English](#english)**
+
+---
+
+<a id="中文"></a>
+
+## 中文
+
 > Claude Skill：粘贴论文文案或上传图片，自动生成学术级配图（LaTeX/TikZ + draw.io）
 
 一个用于 [Claude](https://claude.ai) 的 Skill，让 AI 自动将学术论文文案转化为高质量配图。支持两种输出格式：
@@ -9,7 +17,7 @@
 
 > 输入论文文字/图片 → 自动生成代码 → 编译验证 → 高质量交付
 
-## 效果展示
+### 效果展示
 
 | 系统架构图 | 时序交互图 | 对比方案图 |
 |:---:|:---:|:---:|
@@ -29,7 +37,7 @@
 
 > 以上示例均由本 Skill 自动生成，包含编译验证、渲染审查、自动评分全流程。
 
-## 特性
+### 特性
 
 - **双格式输出**：TikZ 嵌入论文 + draw.io 自由编辑，按需选择
 - **文案驱动**：粘贴论文段落，自动分析内容生成画图指令，再转化为代码
@@ -44,23 +52,23 @@
 - **渐进式规则加载**：核心规则常驻，专项规则按图表类型按需加载，节省上下文 token
 - **经验自动沉淀**：画图过程中的踩坑经验自动记录，后续复用越画越顺
 
-## 安装
+### 安装
 
-### 方法一：命令行安装（推荐）
+#### 方法一：命令行安装（推荐）
 
 ```bash
 npx skills add 0xE1337/thesis-figure-skill
 ```
 
-### 方法二：上传安装
+#### 方法二：上传安装
 
 下载 [`thesis-figure-skill.skill`](thesis-figure-skill.skill) 文件，在 Claude 对话中上传，点击 **"Copy to your skills"** 即可。
 
-### 方法三：手动安装
+#### 方法三：手动安装
 
 将 `skills/thesis-figure-skill/SKILL.md` 文件放入 Claude 的 skills 目录。
 
-## 使用方式
+### 使用方式
 
 安装后，在 Claude 对话中直接说：
 
@@ -96,7 +104,7 @@ Claude 会自动：
 6. 自动评分，不达标则迭代修改
 7. 交付最终文件
 
-## 输出格式对比
+### 输出格式对比
 
 | 场景 | 推荐格式 | 理由 |
 |------|---------|------|
@@ -104,7 +112,7 @@ Claude 会自动：
 | 技术路线图、科研展示图、装饰性强（渐变/阴影） | **draw.io** | 视觉效果好，可拖拽编辑 |
 | 用户明确指定 | 遵循用户要求 | — |
 
-## 支持的图表类型
+### 支持的图表类型
 
 | 类型 | 布局 | 适用场景 |
 |------|------|---------|
@@ -117,7 +125,7 @@ Claude 会自动：
 | 技术路线图 | 多层板块 | 研究框架、技术方案总览 |
 | 分层技术路线图 | 多层板块 | 毕业论文路线图、开题报告（draw.io 模式F） |
 
-## 配色方案
+### 配色方案
 
 内置 draw.io 风格配色，适合学术论文：
 
@@ -130,7 +138,7 @@ Claude 会自动：
 | 红色 | `#F8CECC` | `#B85450` | 关键操作、警告 |
 | 灰色 | `#F5F5F5` | `#666666` | 辅助服务、存储 |
 
-### draw.io 领域配色方案
+#### draw.io 领域配色方案
 
 根据论文所属领域自动选择：
 
@@ -141,24 +149,7 @@ Claude 会自动：
 | C | 翠绿自然 | 环境科学、农业、生态 |
 | D | 科技深色 | 网络安全、区块链、硬件 |
 
-## 示例文件
-
-`examples/` 目录包含 12 个示例，覆盖多种学术图表类型：
-
-1. **系统架构图** — 区块链/云端/边缘/感知四层架构，联邦学习 + 微服务网关
-2. **时序交互图** — 微服务服务发现与注册，分段激活条展示忙/闲交替，含 alt 组合片段
-3. **对比方案图** — 传统群智感知 vs 基于 ZKP 的隐私保护方案，左右并列 + 评估指标
-4. **数据流水线图** — 点云 3D 目标检测，LiDAR→体素化→3D 骨干→BEV 检测，含树状扇出和跳跃连接
-5. **技术路线图** — 超大规模 MIMO 信道建模技术路线图，多层板块布局
-6. **几何/数学示意图** — 二维格空间几何，LLL 约简算法向量可视化 + Gram-Schmidt 正交化公式
-7. **计算流水线图** — 源代码→算术电路→R1CS→QAP 多项式，算术化流程
-8. **分层架构图** — IoT 联邦学习系统，感知终端→边缘计算→云端服务→区块链可信层
-9. **研究框架图** — 源-网-荷-储多层协同优化，漏斗形四层研究架构
-10. **分层技术路线图（draw.io 模式F）** — 智慧农业物联网技术路线图，翠绿自然配色方案，研究背景→问题提出→研究框架→研究内容→结论展望
-11. **编译器优化流程图** — 多阶段优化 Pass 流程，源码 IR→常量折叠→死代码消除→寄存器分配→目标码，含代码块和菱形判断节点
-12. **侧栏+中心嵌套图（draw.io 模式D）** — 网络安全威胁检测框架，技术突破侧栏+多层嵌套核心引擎+应用场景侧栏，科技深色配色方案
-
-## 环境要求
+### 环境要求
 
 本 Skill 在 Claude Code 中运行，自动处理编译环境。如需本地编译 TikZ 示例：
 
@@ -168,7 +159,7 @@ Claude 会自动：
 - poppler-utils（用于 PDF 转 PNG）
 - draw.io Desktop（可选，用于 draw.io 格式导出）
 
-### macOS（推荐）
+#### macOS（推荐）
 
 ```bash
 # 安装 TeX Live
@@ -186,7 +177,7 @@ pdftoppm -png -r 300 example.pdf preview
 
 > macOS 自带 PingFang SC 字体，无需额外安装中文字体。
 
-### Ubuntu/Debian
+#### Ubuntu/Debian
 
 ```bash
 sudo apt-get install texlive-xetex texlive-lang-chinese fonts-noto-cjk poppler-utils
@@ -198,6 +189,196 @@ pdftoppm -png -r 300 example.pdf preview
 
 draw.io 格式的文件可直接在 [app.diagrams.net](https://app.diagrams.net) 打开编辑，也可用 draw.io Desktop 导出 PDF/PNG。
 
-## 许可证
+---
+
+<a id="english"></a>
+
+## English
+
+> Claude Skill: Paste thesis text or upload images, automatically generate publication-quality figures (LaTeX/TikZ + draw.io)
+
+A Skill for [Claude](https://claude.ai) that lets AI automatically transform academic paper text into high-quality figures. Supports two output formats:
+
+- **LaTeX/TikZ**: Ideal for system architecture diagrams, data flow diagrams, geometric illustrations, and other structured charts that can be directly embedded in papers
+- **draw.io XML**: Ideal for research roadmaps, academic presentations, and decorative-rich diagrams with gradient colors, shadows, and free-form layouts
+
+> Input thesis text/image -> Automatically generate code -> Compile and verify -> High-quality delivery
+
+### Gallery
+
+| System Architecture | Sequence Interaction | Comparison Diagram |
+|:---:|:---:|:---:|
+| ![system_architecture](examples/01_system_architecture.png) | ![sequence_interaction](examples/02_sequence_interaction.png) | ![comparison](examples/03_comparison.png) |
+
+| Data Pipeline | Research Roadmap | Geometry/Math Diagram |
+|:---:|:---:|:---:|
+| ![data_pipeline](examples/04_data_pipeline.png) | ![research_roadmap](examples/05_research_roadmap.png) | ![math_diagram](examples/06_math_diagram.png) |
+
+| Computation Pipeline | Layered Architecture | Research Framework |
+|:---:|:---:|:---:|
+| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![research_framework](examples/09_research_framework.png) |
+
+| Layered Roadmap (draw.io) | Compiler Optimization Pipeline | Sidebar + Center Nested (draw.io) |
+|:---:|:---:|:---:|
+| ![layered_roadmap](examples/10_layered_roadmap.png) | ![compiler_pipeline](examples/11_compiler_pipeline.png) | ![sidebar_center](examples/12_sidebar_center.png) |
+
+> All examples above were automatically generated by this Skill, including the full pipeline of compilation verification, rendering review, and automatic scoring.
+
+### Features
+
+- **Dual-Format Output**: TikZ for paper embedding + draw.io for free editing, choose as needed
+- **Text-Driven**: Paste a thesis paragraph, automatically analyze the content to generate drawing instructions, then convert to code
+- **Image-Driven**: Upload an existing screenshot, automatically recreate it as editable code
+- **Domain-Adaptive**: Automatically identifies the paper's field and designs figures from a domain expert's perspective
+- **Unified Color Schemes**: TikZ includes a built-in 6-color academic palette; draw.io provides 4 domain-themed palettes (Academic Blue-Gray / Pink-Purple Gradient / Green Nature / Tech Dark), automatically selected based on the paper's field
+- **12+ Diagram Types**: Layered architecture, sequence, comparison, pipeline, three-column mapping, geometry/math, multi-instance convergence, circuit schematic, hybrid, draw.io roadmap, and more
+- **Compile + Render Review + Auto-Scoring**: After generation, automatically compiles, converts to PNG, performs visual review based on rendered images (not code review), scores across six dimensions, and iterates if not perfect
+- **Designer-Level Review**: Three-pass review method (overall impression -> element-by-element -> connection paths), spatial reasoning like a human, detecting overlap/collision/unnatural layouts
+- **CJK Support**: Native support for Chinese labels, with automatic CJK font detection across platforms (macOS PingFang SC / Linux Noto Sans CJK SC / Windows SimHei)
+- **Drawing Philosophy-Driven**: Four-step thinking cycle (define success criteria -> choose starting point -> in-process validation -> completion judgment), countering model inertia
+- **Progressive Rule Loading**: Core rules stay loaded, specialized rules load on demand by diagram type, saving context tokens
+- **Automatic Experience Logging**: Lessons learned during drawing are automatically recorded and reused, making each subsequent session smoother
+
+### Installation
+
+#### Method 1: Command Line (Recommended)
+
+```bash
+npx skills add 0xE1337/thesis-figure-skill
+```
+
+#### Method 2: Upload
+
+Download the [`thesis-figure-skill.skill`](thesis-figure-skill.skill) file, upload it in a Claude conversation, and click **"Copy to your skills"**.
+
+#### Method 3: Manual
+
+Place the `skills/thesis-figure-skill/SKILL.md` file into Claude's skills directory.
+
+### Usage
+
+After installation, simply say in a Claude conversation:
+
+```
+Draw an architecture diagram based on the following thesis content:
+
+This paper proposes a privacy-preserving framework based on federated learning
+with a three-layer structure: the bottom layer consists of local training nodes
+distributed across hospitals... (paste thesis paragraph)
+```
+
+Or upload an existing image:
+
+```
+Recreate this diagram using TikZ
+(attach screenshot)
+```
+
+Or specify the draw.io format:
+
+```
+Draw a research roadmap in draw.io format
+(paste thesis content)
+```
+
+> **Note**: The first run requires installing fonts and the TeX compilation environment, which takes longer. Subsequent runs will reuse the previously created environment.
+
+Claude will automatically:
+1. Identify the paper's field
+2. Select the appropriate output format (TikZ / draw.io)
+3. Generate detailed drawing instructions
+4. Output complete code
+5. Compile and verify (TikZ) or generate editable files (draw.io)
+6. Auto-score, iterating if below standard
+7. Deliver the final files
+
+### Output Format Comparison
+
+| Scenario | Recommended Format | Reason |
+|----------|-------------------|--------|
+| Embedding in LaTeX papers, with math formulas, structured charts | **TikZ** | Controllable compilation, precise formulas |
+| Research roadmaps, academic presentations, decoration-rich (gradients/shadows) | **draw.io** | Better visual effects, drag-and-drop editing |
+| User explicitly specifies | Follow user's request | -- |
+
+### Supported Diagram Types
+
+| Type | Layout | Use Cases |
+|------|--------|-----------|
+| System Architecture | Vertical layering | Device -> Cloud -> Chain, Hardware -> Middleware -> Application |
+| Sequence Interaction | Multi-column lifelines | Multi-party protocol interaction, handshake flows |
+| Comparison Diagram | Side-by-side | Original vs. improved approach |
+| Data Pipeline | Horizontal multi-stage | Data processing pipelines |
+| Hub-Spoke Diagram | Radial layout | Microservice architecture, core module interactions |
+| Data Flow Diagram | Top-down | Input -> Processing -> Output |
+| Research Roadmap | Multi-layer blocks | Research frameworks, technical solution overviews |
+| Layered Research Roadmap | Multi-layer blocks | Thesis roadmaps, proposal reports (draw.io Mode F) |
+
+### Color Schemes
+
+Built-in draw.io style color scheme, suitable for academic papers:
+
+| Color | Fill | Border | Typical Usage |
+|-------|------|--------|---------------|
+| Blue | `#DAE8FC` | `#6C8EBF` | General modules, base layer |
+| Green | `#D5E8D4` | `#82B366` | Core modules, security components |
+| Orange | `#FFE6CC` | `#D79B00` | Data flow, emphasis elements |
+| Purple | `#E1D5E7` | `#9673A6` | High-level abstractions, decision layer |
+| Red | `#F8CECC` | `#B85450` | Critical operations, warnings |
+| Gray | `#F5F5F5` | `#666666` | Auxiliary services, storage |
+
+#### draw.io Domain Color Schemes
+
+Automatically selected based on the paper's field:
+
+| Scheme | Name | Applicable Fields |
+|--------|------|-------------------|
+| A | Academic Blue-Gray | Computer science, engineering, general academic |
+| B | Pink-Purple Gradient | Biomedical, psychology |
+| C | Green Nature | Environmental science, agriculture, ecology |
+| D | Tech Dark | Cybersecurity, blockchain, hardware |
+
+### Requirements
+
+This Skill runs within Claude Code and automatically handles the compilation environment. For local compilation of TikZ examples:
+
+- TeX Live (with `xelatex`)
+- CJK Chinese fonts (macOS includes PingFang SC, Linux requires Noto Sans CJK SC, Windows uses SimHei)
+- ctex package
+- poppler-utils (for PDF to PNG conversion)
+- draw.io Desktop (optional, for draw.io format export)
+
+#### macOS (Recommended)
+
+```bash
+# Install TeX Live
+brew install --cask mactex-no-gui
+# Install poppler (provides pdftoppm)
+brew install poppler
+# Install draw.io Desktop (optional, for draw.io format export)
+brew install --cask drawio
+
+# Compile TikZ
+xelatex -interaction=nonstopmode example.tex
+# Convert to PNG (300dpi)
+pdftoppm -png -r 300 example.pdf preview
+```
+
+> macOS includes PingFang SC font by default; no additional Chinese font installation is needed.
+
+#### Ubuntu/Debian
+
+```bash
+sudo apt-get install texlive-xetex texlive-lang-chinese fonts-noto-cjk poppler-utils
+# Compile
+xelatex -interaction=nonstopmode example.tex
+# Convert to PNG
+pdftoppm -png -r 300 example.pdf preview
+```
+
+draw.io format files can be opened and edited directly at [app.diagrams.net](https://app.diagrams.net), or exported to PDF/PNG using draw.io Desktop.
+
+---
+
+## License
 
 MIT License
