@@ -64,7 +64,7 @@ Download the [`thesis-figure-skill.skill`](thesis-figure-skill.skill) file, uplo
 
 ### Method 3: Manual
 
-Place the `skills/thesis-figure-skill/SKILL.md` file into Claude's skills directory.
+Copy the entire `skills/thesis-figure-skill/` directory (including `SKILL.md` and `references/` subdirectory) into Claude's skills directory.
 
 ## Usage
 

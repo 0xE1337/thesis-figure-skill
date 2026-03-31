@@ -64,7 +64,7 @@ npx skills add 0xE1337/thesis-figure-skill
 
 ### 方法三：手动安装
 
-将 `skills/thesis-figure-skill/SKILL.md` 文件放入 Claude 的 skills 目录。
+将 `skills/thesis-figure-skill/` 整个目录（包含 `SKILL.md` 和 `references/` 子目录）复制到 Claude 的 skills 目录下。
 
 ## 使用方式
 
