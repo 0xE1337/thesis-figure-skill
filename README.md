@@ -13,23 +13,27 @@
 
 ## 效果展示
 
-| 系统架构图 | 时序交互图 | 对比方案图 |
-|:---:|:---:|:---:|
-| ![system_architecture](examples/01_system_architecture.png) | ![sequence_interaction](examples/02_sequence_interaction.png) | ![comparison](examples/03_comparison.png) |
+### 数据可视化混合图（NEW）
 
-| 数据流水线图 | 技术路线图 | 几何/数学示意图 |
+| Transformer 架构 + 注意力热力图 | zkSNARK 密码学流水线 + 椭圆曲线 | 扩散模型 U-Net + 损失曲线 |
 |:---:|:---:|:---:|
-| ![data_pipeline](examples/04_data_pipeline.png) | ![research_roadmap](examples/05_research_roadmap.png) | ![math_diagram](examples/06_math_diagram.png) |
+| ![transformer](examples/06_transformer.png) | ![zksnark](examples/07_zksnark.png) | ![diffusion](examples/08_diffusion.png) |
 
-| 计算流水线图 | 分层架构图 | 研究框架图 |
+| 联邦学习 + 雷达图 + 收敛曲线 | 图注意力网络 GAT + 散点图 |
+|:---:|:---:|
+| ![fl_crypto](examples/09_fl_crypto.png) | ![gat](examples/10_gat.png) |
+
+### 经典图表类型
+
+| 编译器优化流程图 | 时序交互图 | 对比方案图 |
 |:---:|:---:|:---:|
-| ![computation_pipeline](examples/07_computation_pipeline.png) | ![layered_architecture](examples/08_layered_architecture.png) | ![research_framework](examples/09_research_framework.png) |
+| ![compiler_pipeline](examples/05_compiler_pipeline.png) | ![sequence_interaction](examples/01_sequence_interaction.png) | ![comparison](examples/02_comparison.png) |
 
-| 分层技术路线图（draw.io） | 编译器优化流程图 | 侧栏+中心嵌套图（draw.io） |
-|:---:|:---:|:---:|
-| ![layered_roadmap](examples/10_layered_roadmap.png) | ![compiler_pipeline](examples/11_compiler_pipeline.png) | ![sidebar_center](examples/12_sidebar_center.png) |
+| 分层路线图（draw.io） | 侧栏+中心嵌套图（draw.io） |
+|:---:|:---:|
+| ![layered_roadmap](examples/03_layered_roadmap.png) | ![sidebar_center](examples/04_sidebar_center.png) |
 
-> 以上示例均由本 Skill 自动生成，包含编译验证、渲染审查、自动评分全流程。
+> 以上示例均由本 Skill 自动生成，包含编译验证、44 项视觉审查、六维度评分全流程。
 
 ## 特性
 
