@@ -22,8 +22,13 @@ TikZ 路径规划器 — 自动计算避障正交路径
 import json
 import sys
 import math
-from pathfinding.core.grid import Grid
-from pathfinding.finder.a_star import AStarFinder
+
+try:
+    from pathfinding.core.grid import Grid
+    from pathfinding.finder.a_star import AStarFinder
+except ImportError:
+    print("ERROR: pathfinding 未安装。运行: pip3 install pathfinding")
+    sys.exit(1)
 
 
 # ─── 数据结构 ───

@@ -159,12 +159,35 @@ description: |
 ⚠️ **SVG clip-path + preserveAspectRatio="none" 模拟梯形** — 高度不可控导致布局崩溃，禁用
 ⚠️ **空心描边字 stroke-width ≥ 1.2** — 笔画间隙被填满，字变模糊不清，控制在 0.6-0.8
 
+## 环境依赖自动检测
+
+首次画图时自动检测并安装缺失依赖，无需用户手动操作：
+
+```bash
+# 1. TeX 编译环境（不自动安装，太大了，提示用户）
+which xelatex || echo "⚠️ 请安装 TeX Live: brew install --cask mactex-no-gui (macOS) 或 apt install texlive-xetex (Linux)"
+
+# 2. PDF 转 PNG 工具（不自动安装，提示用户）
+which pdftoppm || echo "⚠️ 请安装 poppler: brew install poppler (macOS) 或 apt install poppler-utils (Linux)"
+
+# 3. Python 质检工具（自动安装）
+python3 -c "import pdfplumber" 2>/dev/null || pip3 install pdfplumber
+python3 -c "import pathfinding" 2>/dev/null || pip3 install pathfinding
+```
+
+**规则**：
+- `xelatex`、`pdftoppm`、CJK 字体：体积大，只提示不自动装，告知用户安装命令
+- `pdfplumber`、`pathfinding`：体积小，缺失时直接 `pip3 install` 自动安装
+- 检测只在**首次编译前**执行一次，后续跳过
+
 ## 统一工作流程
 
 无论用户提供的是**文案、图片、还是论文PDF**，都走同一个流程：
 
 ```
 用户输入（文案/图片/论文/需求描述）
+       ↓
+  ⓪ 环境依赖检测（首次自动执行，缺失则安装/提示）
        ↓
   ① 分析 + 画图指令（识别领域、提取模块、规划布局、选择格式）
        ↓
@@ -283,7 +306,7 @@ python3 references/tikz-validator.py <file.tex>
 - **PASS** → 进入编译
 
 **步骤④**：TikZ 编译验证流程：
-1. **字体可用性检查**（编译前必做）：运行 `fc-list | grep "字体名"` 确认 CJK 字体存在。按平台优先级选择：macOS → PingFang SC / Heiti SC；Linux → Noto Sans CJK SC；Windows → SimHei / Microsoft YaHei。如果模板中的字体不可用，**在编译前替换为本机可用字体**，不要等编译后才发现。
+1. **环境与字体检查**（编译前必做）：如首次执行，先运行⓪环境依赖检测。然后 `fc-list | grep "字体名"` 确认 CJK 字体存在。按平台优先级选择：macOS → PingFang SC / Heiti SC；Linux → Noto Sans CJK SC；Windows → SimHei / Microsoft YaHei。如果模板中的字体不可用，**在编译前替换为本机可用字体**，不要等编译后才发现。
 2. **编译**：`xelatex -interaction=nonstopmode`
 3. **编译日志检查**（关键）：编译后必须 `grep "Missing character" *.log`。xelatex 对缺失字体的处理是 warning 而非 error——PDF 仍会生成但中文全部丢失，这是**静默失败**，不检查 log 会误以为编译成功。
 4. **转预览图**：`pdftoppm -png -r 300` 转 PNG。
