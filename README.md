@@ -179,6 +179,9 @@ Claude 会自动：
 - CJK 中文字体（macOS 自带 PingFang SC，Linux 需安装 Noto Sans CJK SC，Windows 使用 SimHei）
 - ctex 宏包
 - poppler-utils（用于 PDF 转 PNG）
+- Python 3.8+（用于自动化质检工具）
+- pdfplumber（用于编译后重叠检测）
+- pathfinding（可选，用于 A* 路径规划）
 - draw.io Desktop（可选，用于 draw.io 格式导出）
 
 ### macOS（推荐）
@@ -188,6 +191,8 @@ Claude 会自动：
 brew install --cask mactex-no-gui
 # 安装 poppler（提供 pdftoppm）
 brew install poppler
+# 安装 Python 质检工具依赖
+pip3 install pdfplumber pathfinding
 # 安装 draw.io Desktop（可选，用于 draw.io 格式导出）
 brew install --cask drawio
 
@@ -203,6 +208,7 @@ pdftoppm -png -r 300 example.pdf preview
 
 ```bash
 sudo apt-get install texlive-xetex texlive-lang-chinese fonts-noto-cjk poppler-utils
+pip3 install pdfplumber pathfinding
 # 编译
 xelatex -interaction=nonstopmode example.tex
 # 转 PNG

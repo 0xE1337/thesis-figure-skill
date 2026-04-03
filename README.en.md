@@ -180,6 +180,9 @@ This Skill runs within Claude Code and automatically handles the compilation env
 - CJK Chinese fonts (macOS includes PingFang SC, Linux requires Noto Sans CJK SC, Windows uses SimHei)
 - ctex package
 - poppler-utils (for PDF to PNG conversion)
+- Python 3.8+ (for automated QA tools)
+- pdfplumber (for post-compile overlap detection)
+- pathfinding (optional, for A* path routing)
 - draw.io Desktop (optional, for draw.io format export)
 
 ### macOS (Recommended)
@@ -189,6 +192,8 @@ This Skill runs within Claude Code and automatically handles the compilation env
 brew install --cask mactex-no-gui
 # Install poppler (provides pdftoppm)
 brew install poppler
+# Install Python QA tool dependencies
+pip3 install pdfplumber pathfinding
 # Install draw.io Desktop (optional, for draw.io format export)
 brew install --cask drawio
 
@@ -204,6 +209,7 @@ pdftoppm -png -r 300 example.pdf preview
 
 ```bash
 sudo apt-get install texlive-xetex texlive-lang-chinese fonts-noto-cjk poppler-utils
+pip3 install pdfplumber pathfinding
 # Compile
 xelatex -interaction=nonstopmode example.tex
 # Convert to PNG
