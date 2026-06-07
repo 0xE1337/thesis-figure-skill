@@ -74,6 +74,18 @@ Copy the entire `skills/thesis-figure-skill/` directory (including `SKILL.md` an
 
 ## Usage
 
+### 4 Generation Modes
+
+The skill auto-selects a generation path from your description (defaults to A, no manual selection needed):
+
+| Mode | Example trigger | What it does |
+|------|----------------|--------------|
+| **A — Template reuse** (default) | "draw me an X diagram" | Picks the best-matching layout skeleton from 6 validated ones, copies the layout + swaps content. Fastest and most stable — layout battle-tested with zero regressions |
+| **C — Original design** | "unique layout", "design from scratch", "recreate this figure" | Designs the layout from scratch without a skeleton, gated by an independent multi-lens review before delivery |
+| **D — Sediment to library** | "save this .tex to the template library" | Auto-files a figure you made as a new skeleton — the library grows as you use it |
+
+> Mode B (cross-skeleton module remix) is planned; currently falls back to A.
+
 After installation, simply say in a Claude conversation:
 
 ```
