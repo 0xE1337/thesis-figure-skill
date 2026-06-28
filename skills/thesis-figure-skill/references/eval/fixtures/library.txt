@@ -1,0 +1,7 @@
+# 选取一组"已审定"的库内片段作为回归 fixture（运行时从 ../tikz-snippets/ 解析，不复制，避免漂移）。
+# 作用：守护已精雕的片段库 + 在 #3（几何/样式合并）改动样式后，确认这些片段仍干净编译、无新增几何重叠。
+# 每行一个文件名（相对 references/tikz-snippets/），# 起注释。
+pipeline-stages.tex
+bar-chart.tex
+attention-heatmap.tex
+hyperparams-table.tex

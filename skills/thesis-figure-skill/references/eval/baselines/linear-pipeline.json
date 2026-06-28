@@ -1,0 +1,13 @@
+{
+  "kind": "spec",
+  "dot_ok": true,
+  "validator_exit": 0,
+  "compile_ok": true,
+  "missing_char": false,
+  "overlap_categories": {
+    "line-through-node": 16,
+    "line-crossing": 1
+  },
+  "overlap_error_count": 16,
+  "overlap_warn_count": 1
+}

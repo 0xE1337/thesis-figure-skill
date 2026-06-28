@@ -1,0 +1,21 @@
+{
+  "title": "Two zones with cross-zone edges",
+  "layout": { "engine": "dot", "rankdir": "TB", "nodesep": 0.7, "ranksep": 1.0 },
+  "colors": "academic",
+  "zones": [
+    { "id": "client", "label": "Client side", "members": ["ui", "cache"], "color": "blue" },
+    { "id": "server", "label": "Server side", "members": ["api", "db"],   "color": "green" }
+  ],
+  "nodes": [
+    { "id": "ui",    "label": "UI",        "color": "blue",  "size": "normal", "shape": "rect" },
+    { "id": "cache", "label": "Cache",     "color": "blue",  "size": "small",  "shape": "cylinder" },
+    { "id": "api",   "label": "API",       "color": "green", "size": "normal", "shape": "rect" },
+    { "id": "db",    "label": "Database",  "color": "green", "size": "normal", "shape": "cylinder" }
+  ],
+  "edges": [
+    { "from": "ui",    "to": "api",   "style": "main",     "label": "request" },
+    { "from": "api",   "to": "db",    "style": "control" },
+    { "from": "api",   "to": "ui",    "style": "feedback", "label": "response" },
+    { "from": "ui",    "to": "cache", "style": "control" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "tex",
+  "validator_exit": 0,
+  "compile_ok": true,
+  "missing_char": false,
+  "overlap_categories": {},
+  "overlap_error_count": 0,
+  "overlap_warn_count": 0
+}

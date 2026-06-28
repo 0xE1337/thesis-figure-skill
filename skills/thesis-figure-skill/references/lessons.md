@@ -11,6 +11,9 @@
 
 ## Part 1: 已验证基线参数
 
+> **本表是连线几何/间距常量的唯一真相源（SoT）**：tikz-global-rules.md / geometry-math.md / SKILL.md 只引用本表的值，不再各自写死数字。改参数只改这里。
+> 箭头样式（tip / shorten / line width）的可执行 SoT 是 `tikz-template.tex` 的预定义 style（`arrow` / `arrow short` / `residual` 等）——本文件只记录数值与理由，**代码以模板为准**。
+
 ### 通用基线（所有 TikZ 图适用）
 
 #### 间距
@@ -35,7 +38,8 @@
 | line width 选档 — 主流程 | 1.0 pt | canonical `\draw[arrow]` 默认值 |
 | line width 选档 — 强调主线 | 1.6 pt | canonical `\draw[arrow thick]` |
 | line width 选档 — 辅助/dashed | 0.6 pt | canonical `\draw[arrow thin]` / `residual` |
-| 弯折点到目标框距离 | ≥ 1.5cm | rounded corners 吃掉 ~0.6cm |
+| 弯折点到目标框距离 | ≥ 1.5cm | `rounded corners=5pt` 弧线吃掉 ~0.5cm |
+| 连线弯折圆角 | `rounded corners=5pt` | 唯一值；直线段禁加（鬼影弧）|
 | 树状扇出横线到目标框 | ≥ 1.5cm | 太近"刚拐过来就到了" |
 | ⊕/⊗ 小汇合节点两侧间隙 | ≥ 0.4cm | 需要可见箭身 |
 
@@ -90,7 +94,7 @@
 | 跨栏 rail x 坐标（左间） | 3.0, 4.2 | 两条 rail 间距 ≥ 1.2cm |
 | 跨栏 rail x 坐标（右间） | 10.2, 11.3 | |
 | 栏内节点 y 间距 | 1.6cm | |
-| 连线圆角 | `rounded corners=6pt` | |
+| 连线圆角 | 见通用基线（`rounded corners=5pt`）| 不再单列，避免漂移 |
 
 ### 几何/数学示意图
 
@@ -204,7 +208,7 @@
 
 #### [通用] - 弯折后线段太短导致箭头断在弯角
 - **问题/发现**：弯折点紧挨着箭头尖，看起来像箭头断在了弯角。
-- **解决方案**：弯折点到箭头尖之间 ≥ 0.8cm。空间不够则提前弯折让最后一段够长。
+- **解决方案**：弯折点到目标框 ≥ 1.5cm（统一值，见 Part 1 基线表）。空间不够则提前弯折让最后一段够长。
 - **发现日期**：2026-03-29
 
 #### [通用] - 标签有空间却还是重叠放置
@@ -502,7 +506,7 @@
   arrow/.style={
       -{Stealth[length=5pt 1.5, width'=0pt 0.6, sep=0pt 0.5]},
       line width=1.0pt,
-      shorten >=0pt 0.5,                    % 0.5×line_width
+      shorten >=2pt, shorten <=1pt,         % ⚠️ shorten 不支持 dual-arg，用绝对 pt（以 tikz-template.tex 为准）
       color=black!70,
   }
   arrow thick/.style={arrow, line width=1.6pt}    % 主流

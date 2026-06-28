@@ -1,0 +1,16 @@
+{
+  "title": "Fan-out (one source to three heads)",
+  "layout": { "engine": "dot", "rankdir": "LR", "nodesep": 0.5, "ranksep": 1.2 },
+  "colors": "academic",
+  "nodes": [
+    { "id": "src",  "label": "Shared trunk", "color": "blue",   "size": "normal", "shape": "rect" },
+    { "id": "h1",   "label": "Head A",       "color": "green",  "size": "normal", "shape": "rect" },
+    { "id": "h2",   "label": "Head B",       "color": "orange", "size": "normal", "shape": "rect" },
+    { "id": "h3",   "label": "Head C",       "color": "purple", "size": "normal", "shape": "rect" }
+  ],
+  "edges": [
+    { "from": "src", "to": "h1", "style": "main" },
+    { "from": "src", "to": "h2", "style": "main" },
+    { "from": "src", "to": "h3", "style": "main" }
+  ]
+}

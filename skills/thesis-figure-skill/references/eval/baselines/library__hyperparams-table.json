@@ -1,0 +1,11 @@
+{
+  "kind": "tex",
+  "validator_exit": 0,
+  "compile_ok": true,
+  "missing_char": false,
+  "overlap_categories": {
+    "line-through-node": 8
+  },
+  "overlap_error_count": 8,
+  "overlap_warn_count": 0
+}
