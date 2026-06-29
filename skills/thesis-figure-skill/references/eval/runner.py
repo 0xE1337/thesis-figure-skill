@@ -52,7 +52,7 @@ OVERLAP = REFS_DIR / "pdf-overlap-checker.py"
 # 几何重叠类别分级（见 pdf-overlap-checker.py 的 category 字段）
 HARD_CATEGORIES = {
     "text-overlap", "text-overflow", "off-center", "top-heavy",
-    "text-line", "line-crossing",
+    "text-line", "line-crossing", "node-outside-zone",
 }
 CANDIDATE_CATEGORIES = {"line-through-node", "node-overlap"}
 

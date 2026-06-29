@@ -44,7 +44,7 @@ library.txt 列出的库内片段、tex/*.tex   直接走 .tex --xelatex--> .pdf
 
 | 类别 | 判定 |
 |---|---|
-| **HARD**（text-overlap / text-overflow / off-center / top-heavy / text-line / line-crossing）| 当前数 > baseline → 回归 |
+| **HARD**（text-overlap / text-overflow / off-center / top-heavy / text-line / line-crossing / node-outside-zone）| 当前数 > baseline → 回归 |
 | **CANDIDATE**（line-through-node / node-overlap）| 当前数 > baseline → 回归（baseline 已把已知误报冻进去；只抓**增量**）|
 | `tikz-validator` | 出现 ERROR(exit 2) 或退出码升高 → 回归 |
 | 编译 | 从成功变失败、或新增 Missing character → 回归 |
@@ -67,7 +67,7 @@ baselines/*.json             # 每个正常 fixture 的冻结期望（compile / 
 
 ## 覆盖边界（务必诚实）
 
-✅ 抓得到：编译失败、缺字、微斜线/方向反转、文字重叠/溢出、节点/连线几何重叠、布局/模板/checker 自身回归。
+✅ 抓得到：编译失败、缺字、微斜线/方向反转、文字重叠/溢出、节点/连线几何重叠、子框超出所属 zone（内容超容器尺寸）、布局/模板/checker 自身回归。
 ❌ **抓不到**：语义自相矛盾（数字对不上）、"hero 名义在但视觉平"、审美 slop、配色协调。
    这些仍依赖 ④.5 视觉回环 + mode-C 对抗闸门。**本 harness 是回归地板，不是质量天花板。**
 

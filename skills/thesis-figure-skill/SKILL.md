@@ -380,11 +380,14 @@ grep "Missing character" file.log     # 静默失败检查，关键
 pdftoppm -png -r 300 file.pdf out     # 产出 out-1.png
 # overlap.json 落在 .tex 同目录（sub-agent ④.5 步用 Read 读这个绝对路径）
 python3 references/pdf-overlap-checker.py file.pdf --json > "$(dirname file.pdf)/overlap.json"
-# 跑完检查 overlap.json — 7 类检测：
-#   基础 5 类（直接 fix）: text-overlap / text-overflow / off-center / text-line / line-crossing
+# 跑完检查 overlap.json — 8 类检测：
+#   基础 6 类（直接 fix）: text-overlap / text-overflow / off-center / text-line
+#                         / line-crossing / node-outside-zone
 #   candidate 2 类（需 triage）: line-through-node / node-overlap
 # ERROR 类大概率是真 bug 直接修；candidate 类是几何线索（heatmap 矩阵 / fan-in 收敛
 # / panel 边界等常误报），sub-agent 在 ④.5 自评时按坐标对照 PNG 决定 fix 还是 ignore。
+# node-outside-zone = 子框「内容超容器尺寸」溢出所属 zone（经典 mode-A 失败：换了更长的
+# 文字/内容，撑破 skeleton 的固定宽度）。FP-safe 设计（只抓真比 zone 大的框），命中即真 bug。
 ```
 draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawio && pdftoppm -png -r 300 out.pdf out`。
 
@@ -692,7 +695,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 | `dot-to-tikz.py <spec.json>` | B 路：spec → graphviz 自动布局 → TikZ | 结构化图 step ③ |
 | `tikz-validator.py <file.tex>` | 微斜线/溢出/碰撞/方向反转（几何/语法 gate） | 编译前必跑 |
 | `tikz-design-linter.py <file.tex> [--type ...]` | 元素数/尺寸比/线型/hero/嵌入viz（设计野心 gate） | 编译前必跑 |
-| `pdf-overlap-checker.py <file.pdf> [--json]` | PDF 坐标级重叠 + 线穿节点 + 节点重叠几何检测（**7 类**：text-overlap / text-overflow / off-center / text-line / line-crossing / line-through-node / node-overlap） | 编译后必跑 |
+| `pdf-overlap-checker.py <file.pdf> [--json]` | PDF 坐标级重叠 + 线穿节点 + 节点重叠 + 子框超出 zone 几何检测（**8 类**：text-overlap / text-overflow / off-center / text-line / line-crossing / node-outside-zone / line-through-node / node-overlap） | 编译后必跑 |
 | `figure-diff.py <ref.png> <out.png>` | SSIM + 3×3 区域差异 | 复刻任务必跑 |
 | `tikz-path-router.py <spec.json>` | A* 自动避障路径 | 连线 ≥8 条可选 |
 

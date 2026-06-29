@@ -6,13 +6,14 @@ PDF 重叠检测器 — 编译后自动检测渲染结果中的多种几何问�
     python3 pdf-overlap-checker.py <file.pdf>            # 人读文本输出
     python3 pdf-overlap-checker.py <file.pdf> --json     # 结构化输出供 sub-agent 消费
 
-7 类检测（5 基础 + 2 candidate-triage）：
-  基础 5 类（直接 fix）：
+8 类检测（6 基础 + 2 candidate-triage）：
+  基础 6 类（直接 fix）：
     text-overlap        两段文字 bbox 相交（IoU > 0.03）            [ERROR]
     text-overflow       文字溢出其容器矩形                          [ERROR/WARN]
     off-center          容器内容偏离中心 / 顶部留白过多              [WARN]
     text-line           文字被水平/垂直线穿过                        [WARN]
     line-crossing       多条 line segment 互相交叉（聚合计数）       [WARN]
+    node-outside-zone   子框超出所属 zone 容器边界（FP-safe 包含检测）[ERROR/WARN]
   Candidate 2 类（需 sub-agent triage 区分 ignore/fix）：
     line-through-node   line 真穿过 filled rect 内部（PyMuPDF 几何） [ERROR, candidate]
     node-overlap        两个 sibling node rect 几何重叠              [ERROR, candidate]
@@ -696,6 +697,140 @@ def check_node_overlap(
     return issues
 
 
+def check_zone_containment(rects: list[BBox]) -> list[Issue]:
+    """Detect node boxes that are TOO BIG for the zone (container) they sit in.
+
+    The one rect-vs-rect relation every other check misses:
+      - check_text_overflow tests word-vs-its-own-container (the node box), so a
+        *node* overflowing its *zone* is invisible; and rounded-corner boxes
+        never enter pdfplumber's page.rects, so on the skill's house style that
+        check often has no containers at all.
+      - check_node_overlap tests sibling intersection, not child-exceeds-parent,
+        and is size-capped (MAX_W=140) so a wide title strip escapes it.
+
+    Scope — deliberately the mode-A failure, NOT every stray overhang:
+      A node is flagged only when it is genuinely TOO BIG for its zone (content
+      grew past the skeleton's fixed-width container, so even centered it would
+      not fit).  A small element merely *placed* near a decorative band edge — a
+      free connector label, an arrowhead tip — is NOT flagged: that is placement,
+      not overflow.  (Adversarial testing showed flagging those produced false
+      positives on good skeletons E/F.)  This keeps the check FP-safe.
+
+    Mechanism (PyMuPDF synthesized filled rects, which include rounded boxes):
+      0. Collapse near-duplicate rects (re+synth twins, drop-shadow twins) so the
+         zone threshold and size math see one box per physical box.
+      1. ZONE = a rect holding the center of >=2 other rects (shape/size-agnostic).
+      2. Owner of a child = the LARGEST zone whose interior holds the child's
+         center — the most generous container, so a compact sub-zone can't
+         falsely claim a child the outer zone actually contains.  No owner →
+         free-floating → skip.
+      3. Flag a side only if the child is too big to fit that axis of the owner
+         (child wider/taller than the zone) AND sticks out > TOL on that side.
+
+    ERROR for clear overflow (> 5pt), WARN for marginal, mirroring
+    check_text_overflow's thresholds.
+    """
+    issues: list[Issue] = []
+    TOL = 2.5
+    ERROR_PT = 5.0
+    EPS = 0.5
+    MIN_DIM = 6.0  # below this on BOTH sides = arrowhead / glyph, not a content box
+
+    # 0. Collapse near-duplicate rects: a sharp box appears twice (re + synth
+    #    path) and `drop shadow` draws an offset twin.  Merge them (dims within
+    #    3pt, centers within 5pt — matching check_node_overlap's shadow rule) so
+    #    the >=2-child zone threshold and the size test see one box per box.
+    uniq: list[BBox] = []
+    for r in rects:
+        rcx, rcy = (r.x0 + r.x1) / 2, (r.top + r.bottom) / 2
+        if any(abs(r.width - u.width) < 3 and abs(r.height - u.height) < 3
+               and abs(rcx - (u.x0 + u.x1) / 2) <= 5
+               and abs(rcy - (u.top + u.bottom) / 2) <= 5
+               for u in uniq):
+            continue
+        uniq.append(r)
+    rects = uniq
+
+    n = len(rects)
+    if n < 3:  # need at least a zone + 2 contained rects
+        return issues
+
+    centers = [((r.x0 + r.x1) / 2, (r.top + r.bottom) / 2) for r in rects]
+
+    def holds_center(outer: BBox, cx: float, cy: float) -> bool:
+        return (outer.x0 - EPS < cx < outer.x1 + EPS
+                and outer.top - EPS < cy < outer.bottom + EPS)
+
+    # 1. classify zones (a rect holding >=2 other rect centers).
+    is_zone = [False] * n
+    for i, outer in enumerate(rects):
+        cnt = 0
+        for j in range(n):
+            if i == j:
+                continue
+            cx, cy = centers[j]
+            if holds_center(outer, cx, cy):
+                cnt += 1
+                if cnt >= 2:
+                    break
+        is_zone[i] = cnt >= 2
+
+    if not any(is_zone):
+        return issues  # no containers → simple figure, nothing to check
+
+    # 2 + 3. each non-zone child vs the LARGEST zone that claims it.
+    for j, child in enumerate(rects):
+        if is_zone[j]:
+            continue  # zones (incl. nested sub-zones) are not tested as children
+        if child.width < MIN_DIM and child.height < MIN_DIM:
+            continue  # arrowhead / glyph, not a content box
+        cx, cy = centers[j]
+        parent = None
+        parent_area = -1.0
+        for i, outer in enumerate(rects):
+            if not is_zone[i] or i == j:
+                continue
+            if holds_center(outer, cx, cy):
+                area = outer.width * outer.height
+                if area > parent_area:
+                    parent, parent_area = outer, area
+        if parent is None:
+            continue  # free-floating element, belongs to no zone
+
+        # Only "content too big for the container" counts (the mode-A failure).
+        # A child that *fits* the zone but is positioned near an edge is mere
+        # placement (free label / arrowhead on a decorative band) → skip.
+        too_wide = child.width > parent.width - 2 * TOL
+        too_tall = child.height > parent.height - 2 * TOL
+        if not (too_wide or too_tall):
+            continue
+
+        overflows = []
+        if too_wide and child.x0 < parent.x0 - TOL:
+            overflows.append(("左", parent.x0 - child.x0))
+        if too_wide and child.x1 > parent.x1 + TOL:
+            overflows.append(("右", child.x1 - parent.x1))
+        if too_tall and child.top < parent.top - TOL:
+            overflows.append(("上", parent.top - child.top))
+        if too_tall and child.bottom > parent.bottom + TOL:
+            overflows.append(("下", child.bottom - parent.bottom))
+        if not overflows:
+            continue
+
+        max_over = max(v for _, v in overflows)
+        level = "ERROR" if max_over > ERROR_PT else "WARN"
+        desc = ", ".join(f"{side}溢出 {v:.1f}pt" for side, v in overflows)
+        issues.append(Issue(
+            level=level,
+            category="node-outside-zone",
+            message=f"节点超出所属 zone(内容超容器尺寸): rect[{child.x0:.0f},"
+                    f"{child.top:.0f},{child.x1:.0f},{child.bottom:.0f}] {desc} "
+                    f"(zone[{parent.x0:.0f},{parent.top:.0f},"
+                    f"{parent.x1:.0f},{parent.bottom:.0f}])"
+        ))
+    return issues
+
+
 def extract_pymupdf_geometry(filepath: str):
     """Use PyMuPDF to extract real line endpoints + curves + filled rects.
 
@@ -923,6 +1058,8 @@ def validate_pdf(filepath: str) -> list[Issue]:
             all_issues.extend(check_line_through_nodes(segments, node_rects, node_rect_pids))
             # 7. Node-vs-node geometric overlap (sibling intersection).
             all_issues.extend(check_node_overlap(node_rects, node_rect_pids))
+            # 8. Node-vs-zone containment (child box overflowing its container).
+            all_issues.extend(check_zone_containment(node_rects))
 
     return all_issues
 
