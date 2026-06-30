@@ -4,6 +4,16 @@
 % USAGE: Adapted from a GOLD STANDARD figure (Multi-modal Medical Fusion).
 % Sub-agent: copy ENTIRE file as figure.tex, change ONLY content.
 %
+% ⚙ LAYOUT = BY-CONSTRUCTION (positioning + fit + node anchors): the 6
+%   zones are chained with right=of (one zone gap), inter-zone arrows ride
+%   node anchors, each sub-panel's internals sit in a scope
+%   shift={(zone.center)} so they AUTO-RECENTER. Change content / move a
+%   zone and the rest REFLOWS — no coordinate bookkeeping.
+%   ⚠ The "SUB-PANEL CENTERING" x-shift numbers (15.45 / 20.7) below are
+%   the ORIGINAL absolute-coord values — they NO LONGER EXIST in the body
+%   (sub-panels self-center via scope shift); ignore "recompute shifts".
+%   SEMANTIC constraints (renaming, MDT U-shape feedback) STILL HOLD.
+%
 % LAYOUT MODEL (extension of skeleton B for fusion-style architectures):
 %   ┌─────┐    ┌─────┐    ┌─────────┐    ┌─────┐    ┌──────────┐
 %   │Mod 1│───▶│Proj │───▶│         │───▶│Head │───▶│ Eval/Vis │
@@ -73,6 +83,12 @@
 \pgfdeclarelayer{background}
 \pgfsetlayers{background,main}
 
+% ---- single source of truth for the zone-row rhythm ----
+% Each macro zone is an invisible fixed-size node; content is shifted to
+% its .center. Zone heights all equal \zoneh so the band lines up.
+\newlength{\zoneh}\setlength{\zoneh}{11cm}   % zone band height (y 4.5..15.5)
+\def\zonesep{0.55cm}                          % the ONE inter-zone gap
+
 \begin{document}
 \begin{tikzpicture}[
     every node/.style={font=\small},
@@ -91,6 +107,9 @@
         inner sep=4pt, thick, font=\footnotesize},
     proj_box/.style={small_box, fill=drawGreyFill!80, draw=drawGreyLine,
         minimum width=1.0cm, minimum height=1.8cm},
+    % invisible macro-zone anchor node: fixed footprint, content shifts to .center
+    zone/.style={rectangle, minimum height=\zoneh, anchor=north west,
+        inner sep=0pt, outer sep=0pt},
     % === Arrow styles ===
     arrow/.style={-{Stealth[scale=0.9]}, thick, color=black!70,
         shorten >=2pt, shorten <=1pt},
@@ -103,342 +122,334 @@
 ]
 
 % ================================================================
-%  STAGE 1: MULTIMODAL FEATURE EXTRACTION (x=0~5)
+%  MACRO ZONE FRAME — 6 invisible anchor nodes, chained left to right.
+%  Widths chosen to reproduce original footprints; only the FIRST is
+%  hand-placed, the rest follow via right=of + the single \zonesep gap.
 % ================================================================
-% --- CT pathway (top) ---
-\node[blue_node, minimum width=3.0cm, minimum height=2.0cm] (ct) at (1.5, 14)
-    {\textbf{CT 影像}\\[1pt]{\footnotesize 3D ResNet-50}\\[-1pt]{\scriptsize 2048维}};
-% 3D pseudo-stereo effect on CT box
-\fill[drawBlueFill!40, draw=drawBlueLine!80, thick]
-    ([xshift=4pt,yshift=4pt]ct.north east) -- (ct.north east)
-    -- (ct.south east) -- ([xshift=4pt,yshift=4pt]ct.south east) -- cycle;
-\fill[drawBlueFill!30, draw=drawBlueLine!80, thick]
-    ([xshift=4pt,yshift=4pt]ct.north west) -- ([xshift=4pt,yshift=4pt]ct.north east)
-    -- (ct.north east) -- (ct.north west) -- cycle;
-
-% --- Pathology pathway (middle) ---
-\node[green_node, minimum width=3.0cm, minimum height=2.0cm] (path) at (1.5, 10)
-    {\textbf{病理切片}\\[1pt]{\footnotesize ViT-B/16}\\[-1pt]{\scriptsize 768维}};
-
-% --- EHR pathway (bottom) ---
-\node[orange_node, minimum width=3.0cm, minimum height=2.0cm] (ehr) at (1.5, 6)
-    {\textbf{电子病历}\\[1pt]{\footnotesize 临床 BERT}\\[-1pt]{\scriptsize 768维}};
-
-% --- Projection layers ---
-\node[proj_box] (projCT) at (5, 14) {\scriptsize 投影\\[-1pt]\scriptsize 512维};
-\node[proj_box] (projPath) at (5, 10) {\scriptsize 投影\\[-1pt]\scriptsize 512维};
-\node[proj_box] (projEHR) at (5, 6) {\scriptsize 投影\\[-1pt]\scriptsize 512维};
+\node[zone, minimum width=4.0cm] (zInput)                       at (-0.5, 15.5) {};
+\node[zone, minimum width=3.0cm, right=\zonesep of zInput] (zProj)    {};
+\node[zone, minimum width=7.4cm, right=\zonesep of zProj]  (zCMT)     {};  % HERO
+\node[zone, minimum width=4.0cm, right=\zonesep of zCMT]   (zDiag)    {};
+\node[zone, minimum width=4.0cm, right=\zonesep of zDiag]  (zExplain) {};
+\node[zone, minimum width=3.4cm, right=\zonesep of zExplain] (zValid) {};
 
 % ================================================================
-%  STAGE 2: CROSS-MODAL TRANSFORMER FUSION (x=7~14)
+%  STAGE 1: MULTIMODAL FEATURE EXTRACTION  (inside zInput)
 % ================================================================
-% CMT large box (core module, 2x size)
-\node[red_node, minimum width=6.5cm, minimum height=9.5cm,
-      line width=1.5pt] (cmt) at (10.5, 10) {};
-\node[font=\small\bfseries, text=drawRedLine!80!black] at (10.5, 14.0)
-    {跨模态 Transformer (CMT)};
-\node[font=\footnotesize, text=drawRedLine!60!black] at (10.5, 13.4)
-    {6层交叉注意力};
-
-% Inside CMT: Cross-attention diagram (simplified)
-\node[small_box, fill=drawBlueFill!50, draw=drawBlueLine!70,
-      minimum width=1.8cm] (qry) at (8.8, 12.0) {\scriptsize Query (CT)};
-\node[small_box, fill=drawGreenFill!50, draw=drawGreenLine!70,
-      minimum width=1.8cm] (key) at (8.8, 11.0) {\scriptsize Key (病理)};
-\node[small_box, fill=drawOrangeFill!50, draw=drawOrangeLine!70,
-      minimum width=1.8cm] (val) at (8.8, 10.0) {\scriptsize Value (EHR)};
-
-% Attention heatmap (6x6) inside CMT
-\begin{scope}[shift={(11.2, 10.5)}]
-  \node[font=\scriptsize\bfseries, text=drawRedLine!70!black] at (1.0, 1.8) {注意力权重};
-  \foreach \row in {0,...,5} {
-    \foreach \col in {0,...,5} {
-      \pgfmathsetmacro{\dist}{abs(\row-\col)}
-      \pgfmathtruncatemacro{\noise}{int(mod(\row*3+\col*5+\row*\col,5))}
-      \pgfmathtruncatemacro{\score}{min(4, int(\dist + \noise/3))}
-      \ifnum\score=0 \def\cellcol{heatDeep}\fi
-      \ifnum\score=1 \def\cellcol{heatDark}\fi
-      \ifnum\score=2 \def\cellcol{heatMid}\fi
-      \ifnum\score=3 \def\cellcol{heatLight}\fi
-      \ifnum\score=4 \def\cellcol{heatBg}\fi
-      \fill[\cellcol] ({\col*0.32},{-\row*0.28})
-        rectangle ({\col*0.32+0.30},{-\row*0.28+0.26});
-      \draw[white, very thin] ({\col*0.32},{-\row*0.28})
-        rectangle ({\col*0.32+0.30},{-\row*0.28+0.26});
-    }
-  }
+\begin{scope}[shift={(zInput.center)}]
+  % --- CT pathway (top) ---
+  \node[blue_node, minimum width=3.0cm, minimum height=2.0cm] (ct) at (0, 4)
+      {\textbf{CT 影像}\\[1pt]{\footnotesize 3D ResNet-50}\\[-1pt]{\scriptsize 2048维}};
+  % 3D pseudo-stereo effect on CT box
+  \fill[drawBlueFill!40, draw=drawBlueLine!80, thick]
+      ([xshift=4pt,yshift=4pt]ct.north east) -- (ct.north east)
+      -- (ct.south east) -- ([xshift=4pt,yshift=4pt]ct.south east) -- cycle;
+  \fill[drawBlueFill!30, draw=drawBlueLine!80, thick]
+      ([xshift=4pt,yshift=4pt]ct.north west) -- ([xshift=4pt,yshift=4pt]ct.north east)
+      -- (ct.north east) -- (ct.north west) -- cycle;
+  % --- Pathology pathway (middle) ---
+  \node[green_node, minimum width=3.0cm, minimum height=2.0cm] (path) at (0, 0)
+      {\textbf{病理切片}\\[1pt]{\footnotesize ViT-B/16}\\[-1pt]{\scriptsize 768维}};
+  % --- EHR pathway (bottom) ---
+  \node[orange_node, minimum width=3.0cm, minimum height=2.0cm] (ehr) at (0, -4)
+      {\textbf{电子病历}\\[1pt]{\footnotesize 临床 BERT}\\[-1pt]{\scriptsize 768维}};
 \end{scope}
 
-% MCG module inside CMT
-\node[purple_node, minimum width=2.2cm, minimum height=2.2cm,
-      inner sep=6pt] (mcg) at (10.5, 7.0)
-    {\textbf{MCG}\\[1pt]{\scriptsize 模态门控}\\[-1pt]{\scriptsize CT\,0.45}\\[-1pt]{\scriptsize 病理\,0.35}\\[-1pt]{\scriptsize EHR\,0.20}};
+% --- Projection layers (inside zProj, vertically aligned to inputs) ---
+\node[proj_box] (projCT)   at (zProj.center |- ct)   {\scriptsize 投影\\[-1pt]\scriptsize 512维};
+\node[proj_box] (projPath) at (zProj.center |- path) {\scriptsize 投影\\[-1pt]\scriptsize 512维};
+\node[proj_box] (projEHR)  at (zProj.center |- ehr)  {\scriptsize 投影\\[-1pt]\scriptsize 512维};
 
 % ================================================================
-%  STAGE 3: HIERARCHICAL DIAGNOSIS (x=15~18)
+%  STAGE 2: CROSS-MODAL TRANSFORMER FUSION  (inside zCMT)
 % ================================================================
-% Coarse classification
-\node[green_node, minimum width=3.2cm, minimum height=1.8cm] (coarse) at (16.5, 13.0)
-    {\textbf{粗分类头}\\[1pt]{\footnotesize 5类疾病大类}\\[-1pt]{\scriptsize 准确率 96.2\%}};
+% CMT large box (core module). Centered horizontally in zCMT, centered
+% vertically on the middle (path) input row.
+\node[red_node, minimum width=6.5cm, minimum height=9.5cm, line width=1.5pt]
+      (cmt) at (zCMT.center |- path) {};
+\begin{scope}[shift={(cmt.center)}]
+  \node[font=\small\bfseries, text=drawRedLine!80!black] at (0, 4.0)
+      {跨模态 Transformer (CMT)};
+  \node[font=\footnotesize, text=drawRedLine!60!black] at (0, 3.4)
+      {6层交叉注意力};
+  % Inside CMT: Cross-attention diagram (simplified) — left column
+  \node[small_box, fill=drawBlueFill!50, draw=drawBlueLine!70,
+        minimum width=1.8cm] (qry) at (-1.7, 2.0) {\scriptsize Query (CT)};
+  \node[small_box, fill=drawGreenFill!50, draw=drawGreenLine!70,
+        minimum width=1.8cm] (key) at (-1.7, 1.0) {\scriptsize Key (病理)};
+  \node[small_box, fill=drawOrangeFill!50, draw=drawOrangeLine!70,
+        minimum width=1.8cm] (val) at (-1.7, 0.0) {\scriptsize Value (EHR)};
+  % Attention heatmap (6x6) — right of the Q/K/V column
+  \begin{scope}[shift={(0.7, 0.5)}]
+    \node[font=\scriptsize\bfseries, text=drawRedLine!70!black] at (1.0, 1.8) {注意力权重};
+    \foreach \row in {0,...,5} {
+      \foreach \col in {0,...,5} {
+        \pgfmathsetmacro{\dist}{abs(\row-\col)}
+        \pgfmathtruncatemacro{\noise}{int(mod(\row*3+\col*5+\row*\col,5))}
+        \pgfmathtruncatemacro{\score}{min(4, int(\dist + \noise/3))}
+        \ifnum\score=0 \def\cellcol{heatDeep}\fi
+        \ifnum\score=1 \def\cellcol{heatDark}\fi
+        \ifnum\score=2 \def\cellcol{heatMid}\fi
+        \ifnum\score=3 \def\cellcol{heatLight}\fi
+        \ifnum\score=4 \def\cellcol{heatBg}\fi
+        \fill[\cellcol] ({\col*0.32},{-\row*0.28})
+          rectangle ({\col*0.32+0.30},{-\row*0.28+0.26});
+        \draw[white, very thin] ({\col*0.32},{-\row*0.28})
+          rectangle ({\col*0.32+0.30},{-\row*0.28+0.26});
+      }
+    }
+  \end{scope}
+  % MCG module inside CMT (bottom)
+  \node[purple_node, minimum width=2.2cm, minimum height=2.2cm,
+        inner sep=6pt] (mcg) at (0, -3.0)
+      {\textbf{MCG}\\[1pt]{\scriptsize 模态门控}\\[-1pt]{\scriptsize CT\,0.45}\\[-1pt]{\scriptsize 病理\,0.35}\\[-1pt]{\scriptsize EHR\,0.20}};
+\end{scope}
 
-% Fine classification (larger, with embedded bar chart)
-\node[green_node, minimum width=3.6cm, minimum height=4.5cm] (fine) at (16.5, 8.5) {};
-\node[font=\small\bfseries, text=drawGreenLine!80!black] at (16.5, 10.3)
-    {细分类头};
-\node[font=\footnotesize, text=drawGreenLine!60!black] at (16.5, 9.7)
-    {23个具体病种};
-
-% Embedded accuracy comparison bar chart in fine classification box
-% Center math: bars 粗(0.3-0.9)+细(1.2-1.8) group center=1.05; zone center
-% x=16.5; shift was 15.2 (group abs center 16.25, off-left by 0.25cm).
-% Adjusted to 15.45 so group center = 16.5 ✓
-\begin{scope}[shift={(15.45, 6.8)}]
-  \draw[-{Stealth[scale=0.5]}, drawGreyLine] (0.0, 0.0) -- (0.0, 2.2);
-  \draw[-{Stealth[scale=0.5]}, drawGreyLine] (0.0, 0.0) -- (2.8, 0.0);
-  % Bars: coarse vs fine accuracy
-  \fill[barGreen!70] (0.3, 0.0) rectangle (0.9, 1.92); % 96.2%
-  \fill[barBlue!70] (1.2, 0.0) rectangle (1.8, 1.79); % 89.7%
-  \node[font=\tiny, text=barGreen!80!black] at (0.6, 2.05) {96.2};
-  \node[font=\tiny, text=barBlue!80!black] at (1.5, 1.92) {89.7};
-  \node[font=\tiny] at (0.6, -0.2) {粗};
-  \node[font=\tiny] at (1.5, -0.2) {细};
-  \node[font=\tiny, left, text=drawGreyLine] at (-0.05, 1.0) {50};
-  \node[font=\tiny, left, text=drawGreyLine] at (-0.05, 2.0) {100};
-  \node[font=\tiny, text=drawGreyLine] at (1.4, -0.7) {\scriptsize 准确率(\%)};
+% ================================================================
+%  STAGE 3: HIERARCHICAL DIAGNOSIS  (inside zDiag)
+% ================================================================
+% Absolute row heights reused from the original; combined with zone x via -|
+\coordinate (yCoarse)  at (0, 13.0);
+\coordinate (yFine)    at (0,  8.5);
+\coordinate (yGradcam) at (0, 13.5);
+\coordinate (yShap)    at (0,  9.5);
+\coordinate (yGpt4)    at (0,  5.8);
+% Coarse classification (top)
+\node[green_node, minimum width=3.2cm, minimum height=1.8cm] (coarse)
+    at (yCoarse -| zDiag.center) {\textbf{粗分类头}\\[1pt]{\footnotesize 5类疾病大类}\\[-1pt]{\scriptsize 准确率 96.2\%}};
+% Fine classification (larger box with embedded bar chart)
+\node[green_node, minimum width=3.6cm, minimum height=4.5cm] (fine)
+    at (yFine -| zDiag.center) {};
+\begin{scope}[shift={(fine.center)}]
+  \node[font=\small\bfseries, text=drawGreenLine!80!black] at (0, 1.8) {细分类头};
+  \node[font=\footnotesize, text=drawGreenLine!60!black] at (0, 1.2) {23个具体病种};
+  % Embedded accuracy comparison bar chart (group center on fine.center.x)
+  % bars 粗(-0.75..-0.15)+细(0.15..0.75) -> group center 0; chart origin
+  % offset so the group is horizontally centered in the box.
+  \begin{scope}[shift={(-0.75, -1.7)}]
+    \draw[-{Stealth[scale=0.5]}, drawGreyLine] (0.0, 0.0) -- (0.0, 2.2);
+    \draw[-{Stealth[scale=0.5]}, drawGreyLine] (0.0, 0.0) -- (2.8, 0.0);
+    \fill[barGreen!70] (0.3, 0.0) rectangle (0.9, 1.92); % 96.2%
+    \fill[barBlue!70] (1.2, 0.0) rectangle (1.8, 1.79); % 89.7%
+    \node[font=\tiny, text=barGreen!80!black] at (0.6, 2.05) {96.2};
+    \node[font=\tiny, text=barBlue!80!black] at (1.5, 1.92) {89.7};
+    \node[font=\tiny] at (0.6, -0.2) {粗};
+    \node[font=\tiny] at (1.5, -0.2) {细};
+    \node[font=\tiny, left, text=drawGreyLine] at (-0.05, 1.0) {50};
+    \node[font=\tiny, left, text=drawGreyLine] at (-0.05, 2.0) {100};
+    \node[font=\tiny, text=drawGreyLine] at (1.4, -0.7) {\scriptsize 准确率(\%)};
+  \end{scope}
 \end{scope}
 
 % Hierarchical arrow between coarse and fine
 \draw[data_arrow] (coarse.south) -- (fine.north);
 \node[tag, text=drawOrangeLine, fill=white, fill opacity=0.9, text opacity=1,
-      anchor=west] at (17.0, 11.4) {\scriptsize 层次化Softmax};
+      anchor=west] at ($(coarse.south east)+(0.0,-0.4)$) {\scriptsize 层次化Softmax};
 
 % ================================================================
-%  STAGE 4: EXPLAINABILITY (x=20~24)
+%  STAGE 4: EXPLAINABILITY  (inside zExplain)
 % ================================================================
-% Grad-CAM with mini heatmap
-\node[blue_node, minimum width=3.2cm, minimum height=2.5cm] (gradcam) at (21.5, 13.5) {};
-\node[font=\footnotesize\bfseries, text=drawBlueLine!80!black] at (21.5, 14.3)
-    {Grad-CAM};
-% Mini heatmap for Grad-CAM (4x4 grid)
-% Fix E.5: was shift=(20.5, 12.6) → bottom row at y=11.55, outside
-% node bottom y=12.25 (Grad-CAM node center 13.5, height 2.5).
-% Moved up to (20.5, 13.6): rows at 13.6/13.25/12.9/12.55 all inside.
-% Center math: 4 cells × 0.4 = 1.6 wide; heatmap center = shift_x + 0.8.
-% Zone center x=21.5. shift_x was 20.5 → heatmap center 21.3 (off-left
-% by 0.2cm). Adjusted to 20.7 → heatmap center 21.5 ✓
-\begin{scope}[shift={(20.7, 13.6)}]
-  \foreach \r in {0,...,3} {
-    \foreach \c in {0,...,3} {
-      \pgfmathtruncatemacro{\v}{int(mod(\r*\r+\c*3+2,5))}
-      \ifnum\v=0 \def\cc{heatDeep}\fi
-      \ifnum\v=1 \def\cc{heatDark}\fi
-      \ifnum\v=2 \def\cc{heatMid}\fi
-      \ifnum\v=3 \def\cc{heatLight}\fi
-      \ifnum\v=4 \def\cc{heatBg}\fi
-      \fill[\cc] ({\c*0.4},{-\r*0.35}) rectangle ({\c*0.4+0.38},{-\r*0.35+0.33});
+% Grad-CAM with mini heatmap (top)
+\node[blue_node, minimum width=3.2cm, minimum height=2.5cm] (gradcam)
+    at (yGradcam -| zExplain.center) {};
+\begin{scope}[shift={(gradcam.center)}]
+  \node[font=\footnotesize\bfseries, text=drawBlueLine!80!black] at (0, 0.8) {Grad-CAM};
+  % Mini heatmap (4x4 grid); 4 cells x 0.4 = 1.6 wide -> center the grid:
+  % origin offset (-0.8, 0.1) so the heatmap is centered under the title.
+  \begin{scope}[shift={(-0.8, 0.1)}]
+    \foreach \r in {0,...,3} {
+      \foreach \c in {0,...,3} {
+        \pgfmathtruncatemacro{\v}{int(mod(\r*\r+\c*3+2,5))}
+        \ifnum\v=0 \def\cc{heatDeep}\fi
+        \ifnum\v=1 \def\cc{heatDark}\fi
+        \ifnum\v=2 \def\cc{heatMid}\fi
+        \ifnum\v=3 \def\cc{heatLight}\fi
+        \ifnum\v=4 \def\cc{heatBg}\fi
+        \fill[\cc] ({\c*0.4},{-\r*0.35}) rectangle ({\c*0.4+0.38},{-\r*0.35+0.33});
+      }
     }
-  }
-  \node[font=\tiny, text=drawBlueLine] at (0.8, -1.65) {CT注意力区域};
+    \node[font=\tiny, text=drawBlueLine] at (0.8, -1.65) {CT注意力区域};
+  \end{scope}
 \end{scope}
 
-% SHAP analysis with horizontal bar chart
-\node[orange_node, minimum width=3.2cm, minimum height=3.5cm] (shap) at (21.5, 9.5) {};
-\node[font=\footnotesize\bfseries, text=drawOrangeLine!80!black] at (21.5, 10.9)
-    {SHAP 分析};
-% Embedded horizontal bar chart
-\begin{scope}[shift={(20.2, 8.0)}]
-  % Feature importance bars
-  \fill[barOrange!70] (0.8, 1.6) rectangle (2.3, 1.85); % 主诉
-  \fill[barOrange!50] (0.8, 1.15) rectangle (1.9, 1.4); % 检查
-  \fill[barOrange!40] (0.8, 0.7) rectangle (1.5, 0.95); % 年龄
-  \fill[barOrange!30] (0.8, 0.25) rectangle (1.2, 0.5); % 性别
-  % Labels
-  \node[font=\tiny, anchor=east] at (0.75, 1.725) {主诉};
-  \node[font=\tiny, anchor=east] at (0.75, 1.275) {检查};
-  \node[font=\tiny, anchor=east] at (0.75, 0.825) {年龄};
-  \node[font=\tiny, anchor=east] at (0.75, 0.375) {性别};
-  % Axis
-  \draw[drawGreyLine, thin] (0.8, 0.15) -- (0.8, 2.0);
-  \node[font=\tiny, text=drawGreyLine] at (1.5, 0.0) {\scriptsize 贡献度};
+% SHAP analysis with horizontal bar chart (middle)
+\node[orange_node, minimum width=3.2cm, minimum height=3.5cm] (shap)
+    at (yShap -| zExplain.center) {};
+\begin{scope}[shift={(shap.center)}]
+  \node[font=\footnotesize\bfseries, text=drawOrangeLine!80!black] at (0, 1.4) {SHAP 分析};
+  % Embedded horizontal bar chart (local origin near bottom-left of box)
+  \begin{scope}[shift={(-1.3, -1.5)}]
+    \fill[barOrange!70] (0.8, 1.6) rectangle (2.3, 1.85); % 主诉
+    \fill[barOrange!50] (0.8, 1.15) rectangle (1.9, 1.4); % 检查
+    \fill[barOrange!40] (0.8, 0.7) rectangle (1.5, 0.95); % 年龄
+    \fill[barOrange!30] (0.8, 0.25) rectangle (1.2, 0.5); % 性别
+    \node[font=\tiny, anchor=east] at (0.75, 1.725) {主诉};
+    \node[font=\tiny, anchor=east] at (0.75, 1.275) {检查};
+    \node[font=\tiny, anchor=east] at (0.75, 0.825) {年龄};
+    \node[font=\tiny, anchor=east] at (0.75, 0.375) {性别};
+    \draw[drawGreyLine, thin] (0.8, 0.15) -- (0.8, 2.0);
+    \node[font=\tiny, text=drawGreyLine] at (1.5, 0.0) {\scriptsize 贡献度};
+  \end{scope}
 \end{scope}
 
-% GPT-4 diagnosis report
-\node[purple_node, minimum width=3.2cm, minimum height=1.8cm] (gpt4) at (21.5, 5.8)
+% GPT-4 diagnosis report (bottom)
+\node[purple_node, minimum width=3.2cm, minimum height=1.8cm] (gpt4)
+    at (yGpt4 -| zExplain.center)
     {\textbf{GPT-4}\\[1pt]{\footnotesize 诊断报告生成}};
 
 % ================================================================
-%  STAGE 5: CLINICAL VALIDATION (x=25~27)
+%  STAGE 5: CLINICAL VALIDATION  (inside zValid)
 % ================================================================
-\node[red_node, minimum width=2.8cm, minimum height=2.5cm,
-      inner sep=6pt] (mdt) at (25.5, 10)
+\node[red_node, minimum width=2.8cm, minimum height=2.5cm, inner sep=6pt]
+    (mdt) at (zValid.center |- path)
     {\textbf{临床验证}\\[2pt]{\scriptsize 双盲审}\\[-1pt]{\scriptsize Kappa=0.87}\\[2pt]{\scriptsize MDT 讨论}};
 
 % ================================================================
-%  AUC COMPARISON PANEL (bottom)
+%  ZONE BACKGROUNDS — drawn from each zone's own anchors (no re-typed grid)
 % ================================================================
-\node[rectangle, rounded corners=6pt, draw=drawBlueLine, fill=drawBlueFill!12,
-    minimum width=22cm, minimum height=3.5cm, thick, inner sep=0pt] (aucpanel) at (12, 1.5) {};
-% Fix E.3: title was at y=3.0 (anchor=north west) — INSIDE panel top y=3.25
-% by 0.25cm, looking clipped. Move to anchor=south west at y=3.35 so the
-% title sits clearly ABOVE the panel like a section header.
-\node[font=\small\bfseries, text=drawBlueLine!80!black, anchor=south west]
-    at (1.5, 3.35) {多模态融合性能对比 (AUC)};
-
-% AUC bar chart
-\begin{scope}[shift={(5, 0.3)}]
-  % Axes
-  \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.3, 0.0) -- (0.3, 2.3);
-  \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.3, 0.0) -- (10, 0.0);
-  % Grid
-  \foreach \y/\lab in {0.46/0.5, 0.92/0.6, 1.38/0.7, 1.84/0.8, 2.1/0.9} {
-    \draw[gray!20, thin] (0.3, \y) -- (9.5, \y);
-    \node[font=\scriptsize, left, text=drawGreyLine] at (0.25, \y) {\lab};
+\begin{pgfonlayer}{background}
+  \foreach \z/\fillc/\linec in {%
+      zInput/drawBlueFill!10/drawBlueLine!30,
+      zProj/drawGreyFill!30/drawGreyLine!30,
+      zCMT/drawRedFill!8/drawRedLine!25,
+      zDiag/drawGreenFill!10/drawGreenLine!30,
+      zExplain/drawOrangeFill!10/drawOrangeLine!30,
+      zValid/drawRedFill!10/drawRedLine!25} {
+    \fill[\fillc, rounded corners=8pt] (\z.south west) rectangle (\z.north east);
+    \draw[\linec, dashed, thick, rounded corners=8pt] (\z.south west) rectangle (\z.north east);
   }
-  % CT alone bar
-  \fill[barBlue!70, draw=barBlue!90!black, rounded corners=1pt]
-      (1.0, 0.0) rectangle (1.8, 1.87); % 0.891
-  \node[font=\scriptsize, text=barBlue!80!black] at (1.4, 2.0) {0.891};
-  \node[font=\scriptsize] at (1.4, -0.25) {CT};
-  % Pathology alone bar
-  \fill[barGreen!70, draw=barGreen!90!black, rounded corners=1pt]
-      (2.5, 0.0) rectangle (3.3, 1.83); % 0.876
-  \node[font=\scriptsize, text=barGreen!80!black] at (2.9, 1.96) {0.876};
-  \node[font=\scriptsize] at (2.9, -0.25) {病理};
-  % EHR alone bar
-  \fill[barOrange!70, draw=barOrange!90!black, rounded corners=1pt]
-      (4.0, 0.0) rectangle (4.8, 1.67); % 0.812
-  \node[font=\scriptsize, text=barOrange!80!black] at (4.4, 1.8) {0.812};
-  \node[font=\scriptsize] at (4.4, -0.25) {EHR};
-  % MedFusion bar (emphasized, taller)
-  \fill[barRed!60, draw=barRed!80!black, rounded corners=1pt, line width=1pt]
-      (5.8, 0.0) rectangle (6.8, 2.0); % 0.943
-  \node[font=\scriptsize\bfseries, text=barRed!80!black] at (6.3, 2.13) {0.943};
-  \node[font=\scriptsize\bfseries] at (6.3, -0.25) {MedFusion};
-  % Improvement annotation — placed further right (8.5 instead of 8.2)
-  % so "↑5.8% vs CT" doesn't crowd the "0.943" value label above the bar
-  \draw[-{Stealth[scale=0.5]}, very thick, drawRedLine]
-      (7.3, 1.4) -- (7.3, 1.9);
-  \node[font=\scriptsize\bfseries, text=drawRedLine, anchor=west]
-      at (7.4, 1.65) {$\uparrow$5.8\% vs CT};
-\end{scope}
-
-% Legend for AUC panel
-\begin{scope}[shift={(17, 1.6)}]
-  \fill[barBlue!70] (0, 0.6) rectangle (0.3, 0.8);
-  \node[font=\scriptsize, anchor=west] at (0.35, 0.7) {CT单模态};
-  \fill[barGreen!70] (0, 0.2) rectangle (0.3, 0.4);
-  \node[font=\scriptsize, anchor=west] at (0.35, 0.3) {病理单模态};
-  \fill[barOrange!70] (2.5, 0.6) rectangle (2.8, 0.8);
-  \node[font=\scriptsize, anchor=west] at (2.85, 0.7) {EHR单模态};
-  \fill[barRed!60] (2.5, 0.2) rectangle (2.8, 0.4);
-  \node[font=\scriptsize, anchor=west] at (2.85, 0.3) {MedFusion};
-\end{scope}
+\end{pgfonlayer}
 
 % ================================================================
-%  CONNECTIONS — Core data flow
+%  AUC COMPARISON PANEL (bottom) — fit() around its drawn content
 % ================================================================
-% Feature extraction → Projection
+% The bar chart and legend are drawn first (in local coords anchored to a
+% reference coordinate), then a fit() box wraps them as the panel border.
+\coordinate (aucOrigin) at ($(zInput.south west)+(0.5,-4.25)$);
+\begin{scope}[shift={(aucOrigin)}]
+  % AUC bar chart
+  \begin{scope}[shift={(5, 0.3)}]
+    \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.3, 0.0) -- (0.3, 2.3);
+    \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.3, 0.0) -- (10, 0.0);
+    \foreach \y/\lab in {0.46/0.5, 0.92/0.6, 1.38/0.7, 1.84/0.8, 2.1/0.9} {
+      \draw[gray!20, thin] (0.3, \y) -- (9.5, \y);
+      \node[font=\scriptsize, left, text=drawGreyLine] at (0.25, \y) {\lab};
+    }
+    \fill[barBlue!70, draw=barBlue!90!black, rounded corners=1pt]
+        (1.0, 0.0) rectangle (1.8, 1.87); % 0.891
+    \node[font=\scriptsize, text=barBlue!80!black] at (1.4, 2.0) {0.891};
+    \node[font=\scriptsize] at (1.4, -0.25) {CT};
+    \fill[barGreen!70, draw=barGreen!90!black, rounded corners=1pt]
+        (2.5, 0.0) rectangle (3.3, 1.83); % 0.876
+    \node[font=\scriptsize, text=barGreen!80!black] at (2.9, 1.96) {0.876};
+    \node[font=\scriptsize] at (2.9, -0.25) {病理};
+    \fill[barOrange!70, draw=barOrange!90!black, rounded corners=1pt]
+        (4.0, 0.0) rectangle (4.8, 1.67); % 0.812
+    \node[font=\scriptsize, text=barOrange!80!black] at (4.4, 1.8) {0.812};
+    \node[font=\scriptsize] at (4.4, -0.25) {EHR};
+    \fill[barRed!60, draw=barRed!80!black, rounded corners=1pt, line width=1pt]
+        (5.8, 0.0) rectangle (6.8, 2.0); % 0.943
+    \node[font=\scriptsize\bfseries, text=barRed!80!black] at (6.3, 2.13) {0.943};
+    \node[font=\scriptsize\bfseries] at (6.3, -0.25) {MedFusion};
+    \draw[-{Stealth[scale=0.5]}, very thick, drawRedLine]
+        (7.3, 1.4) -- (7.3, 1.9);
+    \node[font=\scriptsize\bfseries, text=drawRedLine, anchor=west]
+        at (7.4, 1.65) {$\uparrow$5.8\% vs CT};
+  \end{scope}
+  % Legend for AUC panel
+  \begin{scope}[shift={(17, 1.6)}]
+    \fill[barBlue!70] (0, 0.6) rectangle (0.3, 0.8);
+    \node[font=\scriptsize, anchor=west] at (0.35, 0.7) {CT单模态};
+    \fill[barGreen!70] (0, 0.2) rectangle (0.3, 0.4);
+    \node[font=\scriptsize, anchor=west] at (0.35, 0.3) {病理单模态};
+    \fill[barOrange!70] (2.5, 0.6) rectangle (2.8, 0.8);
+    \node[font=\scriptsize, anchor=west] at (2.85, 0.7) {EHR单模态};
+    \fill[barRed!60] (2.5, 0.2) rectangle (2.8, 0.4);
+    \node[font=\scriptsize, anchor=west] at (2.85, 0.3) {MedFusion};
+  \end{scope}
+  % invisible corner markers so fit() captures the full panel extent
+  \node (aucBL) at (0.0, -0.5) {};
+  \node (aucTR) at (21.8, 3.0) {};
+\end{scope}
+% Panel border via fit() around the drawn content
+\begin{pgfonlayer}{background}
+  \node[rectangle, rounded corners=6pt, draw=drawBlueLine, fill=drawBlueFill!12,
+        thick, inner sep=0pt, fit=(aucBL)(aucTR)] (aucpanel) {};
+\end{pgfonlayer}
+% Panel title — anchored above the panel's own north west corner
+\node[font=\small\bfseries, text=drawBlueLine!80!black, anchor=south west]
+    at ($(aucpanel.north west)+(0.2,0.1)$) {多模态融合性能对比 (AUC)};
+
+% ================================================================
+%  CONNECTIONS — Core data flow (all via NODE ANCHORS)
+% ================================================================
+% Feature extraction -> Projection
 \draw[data_arrow] (ct.east) -- (projCT.west);
 \draw[arrow] (path.east) -- (projPath.west);
 \draw[arrow] (ehr.east) -- (projEHR.west);
 
-% Projection → CMT
+% Projection -> CMT
 \draw[data_arrow] (projCT.east) -- (cmt.west |- projCT);
 \draw[arrow] (projPath.east) -- (cmt.west |- projPath);
 \draw[arrow] (projEHR.east) -- (cmt.west |- projEHR);
 
-% CMT → Classification
-\draw[data_arrow, rounded corners=6pt]
-    (cmt.east |- coarse) -- (coarse.west);
-\draw[data_arrow, rounded corners=6pt]
-    (cmt.east |- fine) -- (fine.west);
+% CMT -> Classification
+\draw[data_arrow, rounded corners=6pt] (cmt.east |- coarse) -- (coarse.west);
+\draw[data_arrow, rounded corners=6pt] (cmt.east |- fine) -- (fine.west);
 
-% Classification → Explainability
-\draw[arrow, rounded corners=6pt]
-    (coarse.east) -- ++(0.8, 0) |- (gradcam.west);
+% Classification -> Explainability
+\draw[arrow, rounded corners=6pt] (coarse.east) -- ++(0.8, 0) |- (gradcam.west);
 \draw[arrow] (fine.east) -- (shap.west);
-\draw[arrow, rounded corners=6pt]
-    (fine.east) -- ++(0.8, 0) |- (gpt4.west);
+\draw[arrow, rounded corners=6pt] (fine.east) -- ++(0.8, 0) |- (gpt4.west);
 
-% Explainability → Clinical validation
-\draw[arrow, rounded corners=6pt]
-    (gradcam.east) -- ++(0.5, 0) |- (mdt.west |- 0,11.5);
+% Explainability -> Clinical validation
+\draw[arrow, rounded corners=6pt] (gradcam.east) -- ++(0.5, 0) |- (mdt.west |- gradcam);
 \draw[arrow] (shap.east) -- (mdt.west);
-\draw[arrow, rounded corners=6pt]
-    (gpt4.east) -- ++(0.5, 0) |- (mdt.west |- 0,8.5);
+\draw[arrow, rounded corners=6pt] (gpt4.east) -- ++(0.5, 0) |- (mdt.west |- gpt4);
 
 % ================================================================
-%  MDT FEEDBACK LOOP (red dashed, U-shaped along bottom)
+%  MDT FEEDBACK LOOP (red dashed, orthogonal U-shape along the bottom)
 % ================================================================
-% Previous path had a DIAGONAL segment from (25.5, 7.75) to (-1.5, 4.0)
-% that cut DIRECTLY ACROSS the entire figure (visually crossing zones,
-% boxes, and arrows). Replaced with an orthogonal U-path that goes
-% DOWN past the AUC panel bottom (y=-0.25), LEFT to the far margin,
-% UP to clients level, then RIGHT into Pathology.
+% DOWN past the AUC panel bottom, LEFT to the far margin, UP to the
+% input row, then RIGHT into Pathology. All turns reference node anchors
+% / panel anchor so the U-shape tracks the layout under reflow.
+\coordinate (loopBot) at ($(aucpanel.south)+(0,-0.75)$);
 \draw[feed_arrow, rounded corners=8pt, line width=1.2pt]
-    (mdt.south) -- (25.5, -1.0) -- (-2.0, -1.0) -- (-2.0, 10) -- (path.west);
-% Label moved into the empty space along the bottom horizontal segment
-% (was at (12, 3.8) sitting on the old diagonal mid-point).
+    (mdt.south) |- (mdt.south -| loopBot) -- (loopBot)
+    -- (zInput.west |- loopBot) -- (zInput.west |- path) -- (path.west);
+% Label in the empty space along the bottom horizontal segment
 \node[font=\footnotesize\bfseries, text=drawRedLine,
       fill=white, fill opacity=0.9, text opacity=1,
-      inner sep=3pt, rounded corners=2pt] at (12, -0.7) {MDT 反馈优化};
+      inner sep=3pt, rounded corners=2pt] at (loopBot) {MDT 反馈优化};
 
 % ================================================================
-%  STAGE LABELS (top)
+%  STAGE LABELS (top) — anchored to each zone .north, follow the zone
 % ================================================================
 \node[font=\footnotesize\bfseries, text=drawBlueLine!80!black,
       fill=drawBlueFill!60, draw=drawBlueLine!40, rounded corners=3pt,
-      inner sep=4pt] at (1.5, 16.0) {阶段一：多模态特征提取};
+      inner sep=4pt, anchor=south] at ($(zInput.north)+(0,0.3)$) {阶段一：多模态特征提取};
 \node[font=\footnotesize\bfseries, text=drawGreyLine!80!black,
       fill=drawGreyFill!80, draw=drawGreyLine!40, rounded corners=3pt,
-      inner sep=4pt] at (5, 16.0) {投影};
+      inner sep=4pt, anchor=south] at ($(zProj.north)+(0,0.3)$) {投影};
 \node[font=\footnotesize\bfseries, text=drawRedLine!80!black,
       fill=drawRedFill!60, draw=drawRedLine!40, rounded corners=3pt,
-      inner sep=4pt] at (10.5, 16.0) {阶段二：跨模态注意力融合};
+      inner sep=4pt, anchor=south] at ($(zCMT.north)+(0,0.3)$) {阶段二：跨模态注意力融合};
 \node[font=\footnotesize\bfseries, text=drawGreenLine!80!black,
       fill=drawGreenFill!60, draw=drawGreenLine!40, rounded corners=3pt,
-      inner sep=4pt] at (16.5, 16.0) {阶段三：层次化诊断};
+      inner sep=4pt, anchor=south] at ($(zDiag.north)+(0,0.3)$) {阶段三：层次化诊断};
 \node[font=\footnotesize\bfseries, text=drawOrangeLine!80!black,
       fill=drawOrangeFill!60, draw=drawOrangeLine!40, rounded corners=3pt,
-      inner sep=4pt] at (21.5, 16.0) {阶段四：可解释性};
+      inner sep=4pt, anchor=south] at ($(zExplain.north)+(0,0.3)$) {阶段四：可解释性};
 \node[font=\footnotesize\bfseries, text=drawRedLine!80!black,
       fill=drawRedFill!60, draw=drawRedLine!40, rounded corners=3pt,
-      inner sep=4pt] at (25.5, 16.0) {阶段五};
+      inner sep=4pt, anchor=south] at ($(zValid.north)+(0,0.3)$) {阶段五};
 
 % ================================================================
-%  ZONE BACKGROUNDS
+%  DATA VOLUME ANNOTATION (centered under 阶段五 label, inside zValid)
 % ================================================================
-\begin{pgfonlayer}{background}
-  % Stage 1: Feature extraction
-  \fill[drawBlueFill!10, rounded corners=8pt] (-0.5, 4.5) rectangle (3.5, 15.5);
-  \draw[drawBlueLine!30, dashed, thick, rounded corners=8pt] (-0.5, 4.5) rectangle (3.5, 15.5);
-  % Projection
-  \fill[drawGreyFill!30, rounded corners=8pt] (3.5, 4.5) rectangle (6.5, 15.5);
-  \draw[drawGreyLine!30, dashed, thick, rounded corners=8pt] (3.5, 4.5) rectangle (6.5, 15.5);
-  % Stage 2: CMT fusion
-  \fill[drawRedFill!8, rounded corners=8pt] (6.8, 4.5) rectangle (14.2, 15.5);
-  \draw[drawRedLine!25, dashed, thick, rounded corners=8pt] (6.8, 4.5) rectangle (14.2, 15.5);
-  % Stage 3: Hierarchical diagnosis
-  \fill[drawGreenFill!10, rounded corners=8pt] (14.5, 4.5) rectangle (18.5, 15.5);
-  \draw[drawGreenLine!30, dashed, thick, rounded corners=8pt] (14.5, 4.5) rectangle (18.5, 15.5);
-  % Stage 4: Explainability
-  \fill[drawOrangeFill!10, rounded corners=8pt] (19.5, 4.5) rectangle (23.5, 15.5);
-  \draw[drawOrangeLine!30, dashed, thick, rounded corners=8pt] (19.5, 4.5) rectangle (23.5, 15.5);
-  % Stage 5: Clinical validation
-  \fill[drawRedFill!10, rounded corners=8pt] (23.8, 4.5) rectangle (27.2, 15.5);
-  \draw[drawRedLine!25, dashed, thick, rounded corners=8pt] (23.8, 4.5) rectangle (27.2, 15.5);
-\end{pgfonlayer}
-
-% ================================================================
-%  DATA VOLUME ANNOTATION (centered under 阶段五 label)
-% ================================================================
-% Was anchor=north east at (27.0, 15.3) — pinned to right edge of Stage 5
-% zone. Stage 5 zone spans x=23.8..27.2 (center x=25.5). Changed to
-% anchor=north at (25.5, 15.3) so the box is centered horizontally
-% under the "阶段五" label (also at center x=25.5).
 \node[font=\scriptsize, text=drawGreyLine, fill=drawGreyFill!50,
       draw=drawGreyLine!40, rounded corners=3pt, inner sep=4pt,
-      anchor=north] at (25.5, 15.3)
+      anchor=north] at ($(zValid.north)-(0,0.2)$)
     {\shortstack[l]{3家三甲医院\\12,847例\\多中心数据集}};
 
 \end{tikzpicture}
