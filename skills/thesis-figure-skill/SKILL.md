@@ -106,6 +106,10 @@ description: |
 
 ## 硬约束（违反必失败）
 
+> 🧱 **代码正确性地基 → [tikz-figure-code](../tikz-figure-code/SKILL.md) skill**。本技能管"画什么 + 怎么编排迭代"；
+> "怎么写出编译干净、编辑安全的 TikZ 代码"（5 条按构造 idiom + 8 条硬约束全集 + canonical 箭头 + `lint.sh` 静态检查入口）
+> 沉淀在那个地基技能里。写从零图 / 改排版 bug / CJK 渲染问题时按需加载它。本节是其硬约束的高频子集。
+
 🔴 **工具铁律：只用 TikZ 或 draw.io，禁止 Python/matplotlib 替代**（2026-05-22 Batch 17 fig153 教训：sub-agent 在执行 Module-First 时用 Python+matplotlib 生成 `.py` 文件 = 完全偏离 thesis-figure-skill 价值主张）：
 - **Module-First 子流程（③.A→③.D）必须保持 TikZ**——即使 matplotlib 画嵌入 viz 更方便
 - **复杂嵌入 viz** 仍用 TikZ 原生（`\foreach` 画 cell / `pgfplots` 包 / `\draw` 手画 patch）
