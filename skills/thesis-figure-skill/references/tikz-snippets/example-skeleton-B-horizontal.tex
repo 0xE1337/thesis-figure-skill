@@ -2,10 +2,14 @@
 % Complete Figure Example: Skeleton B — 5-stage horizontal pipeline
 % =====================================================================
 % USAGE: Complete, COMPILABLE template for sub-agent to copy + customize.
-% Strategy: explicit (x, y, w, h) for each zone (NOT fit library)
-% guarantees no zone-outside elements.
+% Strategy: BY-CONSTRUCTION — the 5 stages are chained with right=of (a
+% single node distance), inter-stage arrows ride node anchors, and content
+% labels wrap via text width. Change content, lengthen a label, or widen
+% the hero and the rest REFLOWS automatically — no coordinate bookkeeping.
+% (The old absolute-coordinate version lives in git history.)
 %
-% LAYOUT GRID (5 stages × ~5cm wide, gap 0.5cm):
+% LAYOUT GRID (original design intent — now DERIVED by construction, not
+% hand-typed; do not re-introduce absolute \node at (x,y)):
 %   Stage 1: x=[0.0,  4.5],  y=[2,8]   Teal
 %   Stage 2: x=[5.0,  9.5],  y=[2,8]   Blue
 %   Stage 3: x=[10.0, 14.5], y=[2,8]   Purple (HERO)
@@ -17,12 +21,13 @@
 % Each stage uses SAME height = 6cm + same internal padding.
 % Each stage = title strip (top 0.5cm) + content area (5.5cm).
 %
-% Sub-agent customization: change titles + labels + colors. Keep grid.
+% Sub-agent customization: change titles + labels + colors + numbers;
+% the by-construction layout reflows. Do not hand-place absolute coords.
 % =====================================================================
 
 \documentclass[tikz,border=15pt]{standalone}
 \usepackage{xcolor,tikz,amsmath,amssymb}
-\usetikzlibrary{positioning,calc,backgrounds,arrows.meta,bending}
+\usetikzlibrary{positioning,calc,backgrounds,arrows.meta,bending,fit}
 
 \definecolor{acaBlueLine}{HTML}{3060A8}
 \definecolor{acaBlueBg}{HTML}{DCE6F4}
@@ -41,206 +46,178 @@
 \pgfdeclarelayer{background}
 \pgfsetlayers{background,main}
 
+% ---- single source of truth for layout rhythm ----
+\newlength{\stagew}\setlength{\stagew}{4.5cm}  % normal stage width
+\newlength{\stageh}\setlength{\stageh}{6cm}     % stage height
+\def\stagegap{0.5cm}                            % the ONE gap value
+
 \tikzset{
-  base box/.style={
-    rectangle, rounded corners=3pt, line width=0.5pt,
-    minimum height=0.55cm, font=\scriptsize, align=center, inner sep=3pt,
+  stage zone/.style={
+    rectangle, rounded corners=4pt, line width=0.7pt,
+    minimum width=\stagew, minimum height=\stageh, anchor=north west,
+  },
+  title strip/.style={
+    anchor=north, font=\small\bfseries, text=white, rounded corners=2pt,
+    inner ysep=2.5pt, yshift=-2pt, text width=3.9cm, align=center,
+  },
+  ibox/.style={  % internal content box: text width -> wraps, never overflows
+    rectangle, rounded corners=3pt, line width=0.5pt, font=\scriptsize,
+    align=center, inner sep=3pt, text width=3.2cm, minimum height=0.55cm,
   },
   flow arrow/.style={
     -{Stealth[length=5pt 1.2, width'=0pt 0.5]},
     line width=1.0pt, shorten >=2pt, shorten <=2pt, color=acaGreyLine,
   },
-}
-
-% Helper: draw stage zone with explicit rect + title strip
-% Args: #1=line color, #2=bg color, #3=x0, #4=x1, #5=title text
-\newcommand{\drawstage}[5]{
-  % Zone background
-  \begin{pgfonlayer}{background}
-    \fill[#2!50, rounded corners=4pt] (#3, 2) rectangle (#4, 8);
-  \end{pgfonlayer}
-  % Zone border
-  \draw[#1, line width=0.7pt, rounded corners=4pt]
-    (#3, 2) rectangle (#4, 8);
-  % Title strip
-  \pgfmathsetmacro\titleX{(#3 + #4) / 2}
-  \node[anchor=north, font=\small\bfseries, fill=#1, text=white,
-        rounded corners=2pt, inner sep=3pt, inner ysep=2pt,
-        minimum width={#4 - #3 - 0.3 cm}]
-    at (\titleX, 7.85) {#5};
+  node distance=\stagegap,
 }
 
 \begin{document}
 \begin{tikzpicture}
 
 % =====================================================================
-% TITLE (top)
+% STAGE ROW — first stage anchored, rest chained `right=of` previous
 % =====================================================================
-\node[font=\Large\bfseries, color=acaPurpleLine, anchor=south]
-  at (12.25, 8.6) {Generic ML Pipeline: A 5-Stage Example};
-\node[font=\small, color=acaGreyLine, anchor=south]
-  at (12.25, 8.25) {Author et al., Venue 2026 \quad|\quad Dataset 1.0M};
+\node[stage zone, draw=acaTealLine]   (s1) at (0,0) {};
+\node[stage zone, draw=acaBlueLine,   right=of s1] (s2) {};
+\node[stage zone, draw=acaPurpleLine, right=of s2] (s3) {};  % HERO
+\node[stage zone, draw=acaOrangeLine, right=of s3] (s4) {};
+\node[stage zone, draw=acaGreenLine,  right=of s4] (s5) {};
+
+% Zone backgrounds (behind everything)
+\begin{pgfonlayer}{background}
+  \fill[acaTealBg!50,  rounded corners=4pt] (s1.south west) rectangle (s1.north east);
+  \fill[acaBlueBg!50,  rounded corners=4pt] (s2.south west) rectangle (s2.north east);
+  \fill[acaPurpleBg!50,rounded corners=4pt] (s3.south west) rectangle (s3.north east);
+  \fill[acaOrangeBg!50,rounded corners=4pt] (s4.south west) rectangle (s4.north east);
+  \fill[acaGreenBg!50, rounded corners=4pt] (s5.south west) rectangle (s5.north east);
+\end{pgfonlayer}
+
+% Title strips (anchored to each stage .north -> follow the stage)
+\node[title strip, fill=acaTealLine]   at (s1.north) {Stage 1: Input};
+\node[title strip, fill=acaBlueLine]   at (s2.north) {Stage 2: Encode};
+\node[title strip, fill=acaPurpleLine] at (s3.north) {Stage 3: Core (Hero)};
+\node[title strip, fill=acaOrangeLine] at (s4.north) {Stage 4: Decode};
+\node[title strip, fill=acaGreenLine]  at (s5.north) {Stage 5: Output};
 
 % =====================================================================
-% STAGE 1: INPUT (Teal) — x=[0, 4.5]
+% INTER-STAGE ARROWS — node anchors only. Cannot misalign under reflow.
 % =====================================================================
-\drawstage{acaTealLine}{acaTealBg}{0}{4.5}{Stage 1: Input}
+\foreach \a/\b in {s1/s2, s2/s3, s3/s4, s4/s5} {
+  \draw[flow arrow] (\a.east) -- (\b.west);
+}
 
-% Content (positions confirmed inside [0, 4.5] × [2, 7.4]):
-\node[base box, fill=white, draw=acaTealLine, text=acaTealLine,
-      minimum width=3.5cm] (s1_data) at (2.25, 6.8) {Raw Data};
-
-% Mini heatmap centered (5×5 at center)
-% Fix: Stage 1 zone x=[0, 4.5], center=2.25. Heatmap width=N*cs=2.0
-% → xH = 2.25 - 1.0 = 1.25 → heatmap center = 2.25 ✓ (zone center)
-\def\xH{1.25}\def\yH{6.1}\def\cs{0.4}\def\N{5}
-\foreach \i in {1,...,\N} {
-  \foreach \j in {1,...,\N} {
-    \pgfmathsetmacro\val{exp(-abs(\i-\j)/2)*100}
-    \pgfmathsetmacro\val{int(\val)}
-    \pgfmathsetmacro\cx{\xH + (\j - 0.5) * \cs}
-    \pgfmathsetmacro\cy{\yH - (\i - 0.5) * \cs}
+% =====================================================================
+% STAGE 1 content — placed relative to s1 anchors
+% =====================================================================
+\node[ibox, fill=white, draw=acaTealLine, text=acaTealLine,
+      below=0.55cm of s1.north] (s1_data) {Raw Data};
+% heatmap centred under the data box, attached via scope shift to a node anchor
+\begin{scope}[shift={($(s1_data.south)+(0,-1.35)$)}]
+  \def\cs{0.4}\def\N{5}
+  \foreach \i in {1,...,\N}\foreach \j in {1,...,\N}{
+    \pgfmathsetmacro\val{int(exp(-abs(\i-\j)/2)*100)}
     \fill[cellHi!\val!cellLo]
-      (\cx - \cs/2, \cy - \cs/2) rectangle (\cx + \cs/2, \cy + \cs/2);
+      ({(\j-3)*\cs-\cs/2},{(3-\i)*\cs-\cs/2}) rectangle
+      ({(\j-3)*\cs+\cs/2},{(3-\i)*\cs+\cs/2});
   }
-}
-\draw[acaTealLine, line width=0.4pt]
-  (\xH, \yH) rectangle (\xH + \N*\cs, \yH - \N*\cs);
-\node[font=\tiny, color=acaGreyLine, anchor=north]
-  at (\xH + \N*\cs/2, \yH - \N*\cs - 0.05) {Sample Matrix ($5{\times}5$)};
-
+  \draw[acaTealLine,line width=0.4pt]
+    ({-\N*\cs/2},{-\N*\cs/2}) rectangle ({\N*\cs/2},{\N*\cs/2});
+  \node[font=\tiny,color=acaGreyLine,anchor=north] at (0,{-\N*\cs/2-0.05})
+    {Sample Matrix ($5{\times}5$)};
+\end{scope}
 \node[font=\scriptsize, color=acaTealLine, anchor=south, align=center]
-  at (2.25, 2.2) {$N = 10^6$ samples\\$d = 768$};
+  at ($(s1.south)+(0,0.2)$) {$N = 10^6$ samples\\$d = 768$};
 
 % =====================================================================
-% STAGE 2: ENCODE (Blue) — x=[5, 9.5]
+% STAGE 2 content
 % =====================================================================
-\drawstage{acaBlueLine}{acaBlueBg}{5.0}{9.5}{Stage 2: Encode}
-
-\node[base box, fill=white, draw=acaBlueLine, text=acaBlueLine,
-      minimum width=3.5cm] (s2_emb) at (7.25, 6.8) {Token Embedding};
-\node[base box, fill=acaBlueBg, draw=acaBlueLine, text=acaBlueLine,
-      minimum width=3.5cm] (s2_pe) at (7.25, 5.9) {Positional Enc.};
-\node[base box, fill=white, draw=acaBlueLine, text=acaBlueLine,
-      minimum width=3.5cm, minimum height=1.2cm] (s2_tr)
-  at (7.25, 4.4) {Transformer\\(12 layers)};
-
-\draw[flow arrow, shorten >=1pt, shorten <=1pt]
-  (s2_emb.south) -- (s2_pe.north);
-\draw[flow arrow, shorten >=1pt, shorten <=1pt]
-  (s2_pe.south) -- (s2_tr.north);
-
+\node[ibox, fill=white,    draw=acaBlueLine, text=acaBlueLine,
+      below=0.55cm of s2.north] (s2_emb) {Token Embedding};
+\node[ibox, fill=acaBlueBg, draw=acaBlueLine, text=acaBlueLine,
+      below=0.18cm of s2_emb] (s2_pe) {Positional Enc.};
+\node[ibox, fill=white,    draw=acaBlueLine, text=acaBlueLine,
+      minimum height=1.1cm, below=0.18cm of s2_pe] (s2_tr) {Transformer\\(12 layers)};
+\draw[flow arrow, shorten >=1pt, shorten <=1pt] (s2_emb.south) -- (s2_pe.north);
+\draw[flow arrow, shorten >=1pt, shorten <=1pt] (s2_pe.south) -- (s2_tr.north);
 \node[font=\scriptsize, color=acaBlueLine, anchor=south, align=center]
-  at (7.25, 2.2) {Self-attention\\Multi-head ($h=12$)};
+  at ($(s2.south)+(0,0.2)$) {Self-attention\\Multi-head ($h=12$)};
 
 % =====================================================================
-% STAGE 3: CORE (Purple HERO) — x=[10, 14.5]
+% STAGE 3 content (HERO)
 % =====================================================================
-\drawstage{acaPurpleLine}{acaPurpleBg}{10.0}{14.5}{Stage 3: Core (Hero)}
-
-\node[base box, fill=white, draw=acaPurpleLine, text=acaPurpleLine,
-      minimum width=3.7cm, minimum height=2.2cm,
-      line width=0.8pt, align=center] (s3_hero)
-  at (12.25, 5.8) {%
-    {\small\bfseries Attention + FFN}\\[2pt]
-    {\tiny\itshape $\mathcal{O}(N^2 d)$ time}\\[6pt]
-    {\tiny multi-head projections}};
-
-\node[base box, fill=acaPurpleBg, draw=acaPurpleLine, text=acaPurpleLine,
-      minimum width=3.7cm, align=center, font=\scriptsize] (s3_form)
-  at (12.25, 3.5)
+\node[ibox, fill=white, draw=acaPurpleLine, text=acaPurpleLine, line width=0.8pt,
+      minimum height=2.0cm, below=0.6cm of s3.north] (s3_hero)
+  {{\small\bfseries Attention + FFN}\\[2pt]{\tiny\itshape $\mathcal{O}(N^2 d)$ time}\\[5pt]{\tiny multi-head projections}};
+\node[ibox, fill=acaPurpleBg, draw=acaPurpleLine, text=acaPurpleLine,
+      below=0.3cm of s3_hero] (s3_form)
   {$y = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$};
-
 \node[font=\scriptsize, color=acaPurpleLine, anchor=south]
-  at (12.25, 2.2) {\textbf{Hero module}};
+  at ($(s3.south)+(0,0.2)$) {\textbf{Hero module}};
 
 % =====================================================================
-% STAGE 4: DECODE (Orange) — x=[15, 19.5]
+% STAGE 4 content
 % =====================================================================
-\drawstage{acaOrangeLine}{acaOrangeBg}{15.0}{19.5}{Stage 4: Decode}
-
-\node[base box, fill=white, draw=acaOrangeLine, text=acaOrangeLine,
-      minimum width=3.5cm] (s4_dec) at (17.25, 6.8) {Decoder Head};
-\node[base box, fill=acaOrangeBg, draw=acaOrangeLine, text=acaOrangeLine,
-      minimum width=3.5cm] (s4_lin) at (17.25, 5.9) {Linear Proj};
-
-% Mini bar chart (3 bars, no foreach to avoid idx issues)
-% Title ≥ 0.5cm above value labels (was 0.02cm, severe overlap)
-% Fix: Stage 4 zone x=[15, 19.5], center=17.25. 3 bars total width 2.6cm
-% → xBC = 17.25 - 1.3 = 15.95 → bars span [15.95, 18.55], center=17.25 ✓
-\def\xBC{15.95}\def\yBC{2.7}
-\node[font=\tiny, color=acaGreyLine, anchor=south]
-  at (\xBC + 1.3, \yBC + 1.8) {Method Comparison};
-\foreach \name/\val/\xoff in {A/0.85/0.0, B/0.92/1.0, C/0.78/2.0} {
-  \pgfmathsetmacro\bx{\xBC + \xoff}
-  \pgfmathsetmacro\bh{0.85 * \val}
-  \fill[acaOrangeBg] (\bx, \yBC) rectangle (\bx + 0.6, \yBC + \bh);
-  \draw[acaOrangeLine, line width=0.4pt]
-    (\bx, \yBC) rectangle (\bx + 0.6, \yBC + \bh);
-  \node[font=\tiny\bfseries, color=acaOrangeLine, anchor=south]
-    at (\bx + 0.3, \yBC + \bh + 0.02) {\val};
-  \node[font=\tiny, color=acaGreyLine, anchor=north]
-    at (\bx + 0.3, \yBC - 0.05) {\name};
-}
+\node[ibox, fill=white,      draw=acaOrangeLine, text=acaOrangeLine,
+      below=0.55cm of s4.north] (s4_dec) {Decoder Head};
+\node[ibox, fill=acaOrangeBg, draw=acaOrangeLine, text=acaOrangeLine,
+      below=0.18cm of s4_dec] (s4_lin) {Linear Proj};
+% bar chart attached under the linear-proj box
+\begin{scope}[shift={($(s4_lin.south)+(0,-1.5)$)}]
+  \node[font=\tiny,color=acaGreyLine,anchor=south] at (0,1.05) {Method Comparison};
+  \foreach \name/\val/\k in {A/0.85/-1, B/0.92/0, C/0.78/1}{
+    \pgfmathsetmacro\bh{0.85*\val}
+    \fill[acaOrangeBg] ({\k*0.7-0.3},0) rectangle ({\k*0.7+0.3},\bh);
+    \draw[acaOrangeLine,line width=0.4pt] ({\k*0.7-0.3},0) rectangle ({\k*0.7+0.3},\bh);
+    \node[font=\tiny\bfseries,color=acaOrangeLine,anchor=south] at (\k*0.7,\bh+0.02) {\val};
+    \node[font=\tiny,color=acaGreyLine,anchor=north] at (\k*0.7,-0.05) {\name};
+  }
+\end{scope}
 
 % =====================================================================
-% STAGE 5: OUTPUT (Green) — x=[20, 24.5]
+% STAGE 5 content
 % =====================================================================
-\drawstage{acaGreenLine}{acaGreenBg}{20.0}{24.5}{Stage 5: Output}
-
-\node[base box, fill=white, draw=acaGreenLine, text=acaGreenLine,
-      minimum width=3.5cm] (s5_out) at (22.25, 6.8) {Output};
-
-% Metric card (use \large not \Large — matches surrounding box font)
-\node[draw=acaGreenLine, fill=white, rounded corners=4pt,
-      line width=0.6pt, minimum width=3.0cm, minimum height=1.3cm,
-      align=center, inner sep=4pt] at (22.25, 5.2)
-  {{\large\bfseries\color{acaGreenLine} 92.4\%}\\[1pt]
-   {\scriptsize\color{acaGreyLine} Top-1 Acc.}};
-
+\node[ibox, fill=white, draw=acaGreenLine, text=acaGreenLine,
+      below=0.55cm of s5.north] (s5_out) {Output};
+\node[draw=acaGreenLine, fill=white, rounded corners=4pt, line width=0.6pt,
+      minimum width=3.0cm, minimum height=1.3cm, align=center, inner sep=4pt,
+      below=0.35cm of s5_out] (s5_metric)
+  {{\large\bfseries\color{acaGreenLine} 92.4\%}\\[1pt]{\scriptsize\color{acaGreyLine} Top-1 Acc.}};
 \node[font=\scriptsize, color=acaGreenLine, anchor=south, align=center]
-  at (22.25, 2.4) {SOTA on\\Benchmark X};
+  at ($(s5.south)+(0,0.2)$) {SOTA on\\Benchmark X};
 
 % =====================================================================
-% INTER-STAGE ARROWS
+% TITLE — centred on the whole row via calc midpoint (by construction)
 % =====================================================================
-\foreach \a/\b in {4.5/5.0, 9.5/10.0, 14.5/15.0, 19.5/20.0} {
-  \draw[flow arrow] (\a, 5) -- (\b, 5);
-}
+\coordinate (rowtop) at ($(s1.north west)!0.5!(s5.north east)$);
+\node[font=\Large\bfseries, color=acaPurpleLine, anchor=south]
+  at ($(rowtop)+(0,0.55)$) {Generic ML Pipeline: A 5-Stage Example};
+\node[font=\small, color=acaGreyLine, anchor=south]
+  at ($(rowtop)+(0,0.2)$) {Author et al., Venue 2026 \quad|\quad Dataset 1.0M};
 
 % =====================================================================
-% BOTTOM ROW: Summary Bar
+% SUMMARY BAR — one cell below each stage, then chained
 % =====================================================================
-\foreach \i/\lab in {1/Input, 2/Encode, 3/Core, 4/Decode, 5/Output} {
-  \pgfmathsetmacro\sbX{2.25 + (\i - 1) * 5}
-  \node[rectangle, rounded corners=3pt, fill=acaGreyLine!10,
-        draw=acaGreyLine, line width=0.4pt, font=\scriptsize,
-        text=acaGreyLine, inner sep=4pt, minimum height=0.5cm,
-        minimum width=2.2cm]
-    (sb\i) at (\sbX, 0.8) {\lab};
+\foreach \s/\lab in {s1/Input, s2/Encode, s3/Core, s4/Decode, s5/Output}{
+  \node[rectangle, rounded corners=3pt, fill=acaGreyLine!10, draw=acaGreyLine,
+        line width=0.4pt, font=\scriptsize, text=acaGreyLine, inner sep=4pt,
+        minimum height=0.5cm, minimum width=2.2cm,
+        below=1.2cm of \s.south] (sb-\s) {\lab};
 }
-\foreach \a/\b in {1/2, 2/3, 3/4, 4/5} {
+\foreach \a/\b in {s1/s2, s2/s3, s3/s4, s4/s5}{
   \draw[-{Stealth[length=3pt]}, line width=0.5pt, color=acaPurpleLine,
-        shorten >=1pt, shorten <=1pt]
-    (sb\a.east) -- (sb\b.west);
+        shorten >=1pt, shorten <=1pt] (sb-\a.east) -- (sb-\b.west);
 }
 
 % =====================================================================
-% BOTTOM-MOST: Color Legend
+% COLOR LEGEND — below the summary bar, tracks it
 % =====================================================================
 \node[font=\scriptsize\bfseries, color=acaGreyLine, anchor=east]
-  at (1.0, -0.3) {Legend:};
-\foreach \i/\col/\lab in {%
-  1/acaTealLine/Input,%
-  2/acaBlueLine/Encode,%
-  3/acaPurpleLine/Core,%
-  4/acaOrangeLine/Decode,%
-  5/acaGreenLine/Output%
-} {
-  \pgfmathsetmacro\lx{1.5 + (\i - 1) * 4.5}
-  \fill[\col] (\lx, -0.4) rectangle (\lx + 0.25, -0.2);
+  at ($(sb-s1.south west)+(-0.1,-0.45)$) {Legend:};
+\foreach \s/\col/\lab in {s1/acaTealLine/Input, s2/acaBlueLine/Encode,
+      s3/acaPurpleLine/Core, s4/acaOrangeLine/Decode, s5/acaGreenLine/Output}{
+  \fill[\col] ($(sb-\s.south west)+(0,-0.55)$) rectangle ($(sb-\s.south west)+(0.25,-0.35)$);
   \node[anchor=west, font=\tiny, color=acaGreyLine]
-    at (\lx + 0.3, -0.3) {\lab};
+    at ($(sb-\s.south west)+(0.3,-0.45)$) {\lab};
 }
 
 \end{tikzpicture}

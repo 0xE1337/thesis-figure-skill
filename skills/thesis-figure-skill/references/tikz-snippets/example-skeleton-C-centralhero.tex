@@ -1,10 +1,17 @@
 % =====================================================================
 % Complete Figure Example: Skeleton C — Central Hero + 4 Panels
 % =====================================================================
-% USAGE: Complete compilable template. Uses explicit (x,y,w,h) for
-% each zone — NO fit library (which has zone-outside trap).
+% USAGE: Complete compilable template, BY-CONSTRUCTION layout.
 %
-% LAYOUT GRID (exact positions):
+% ⚙ LAYOUT = BY-CONSTRUCTION (positioning + fit + node anchors): the bento
+%   rhythm lives in ONE place, the 5 zones are placed relative to each
+%   other, inter-zone arrows ride node anchors, each panel's internals sit
+%   in a scope shift={(zone.center)}. Change content, lengthen labels, or
+%   move/widen a zone and the rest REFLOWS — no coordinate bookkeeping.
+%   ⚠ The x/y numbers in the LAYOUT GRID below are ORIGINAL design intent,
+%   now derived — not live values. SEMANTIC constraints still hold.
+%
+% LAYOUT GRID (original design intent — now derived by construction):
 %   Title:           y=[10.0, 11.0]   x=[0, 21]
 %   LU Hyperparams:  x=[0.0,  9.5]    y=[6.0, 9.5]   teal
 %   RU Benchmarks:   x=[11.0, 21.0]   y=[6.0, 9.5]   blue
@@ -13,12 +20,13 @@
 %   RD Metrics:      x=[11.0, 21.0]   y=[-2.5, 1.0]  green
 %   Legend:          x=[0, 21]        y=[-3.5, -3.0]
 %
-% Sub-agent: replace titles + labels + numbers. Keep grid + zone rects.
+% Sub-agent: replace titles + labels + numbers; the bento reflows by
+% construction. Do not re-introduce absolute \node at (x,y) / hand rects.
 % =====================================================================
 
 \documentclass[tikz,border=15pt]{standalone}
 \usepackage{xcolor,tikz,amsmath,amssymb}
-\usetikzlibrary{positioning,calc,backgrounds,arrows.meta,bending}
+\usetikzlibrary{positioning,calc,backgrounds,arrows.meta,bending,fit}
 
 \definecolor{acaBlueLine}{HTML}{3060A8}
 \definecolor{acaBlueFill}{HTML}{6890C8}
@@ -39,238 +47,280 @@
 \pgfdeclarelayer{background}
 \pgfsetlayers{background,main}
 
+% ---- single source of truth for the bento rhythm ----
+\newlength{\colw}\setlength{\colw}{9.5cm}    % side-column width
+\newlength{\sideh}\setlength{\sideh}{3.5cm}  % top/bottom row height
+\newlength{\heroh}\setlength{\heroh}{4.0cm}  % hero band height
+\def\colgap{1.5cm}                            % gap between L/R columns
+\def\rowgap{0.5cm}                            % gap between rows
+
 \tikzset{
+  zone/.style={
+    rectangle, rounded corners=4pt, line width=0.7pt,
+    minimum width=\colw, minimum height=\sideh, anchor=north west,
+    inner sep=0pt,
+  },
+  herozone/.style={
+    rectangle, rounded corners=4pt, line width=0.7pt,
+    minimum height=\heroh, anchor=north west, inner sep=0pt,
+  },
+  ztitle/.style={
+    anchor=north, font=\small\bfseries, text=white, rounded corners=2pt,
+    inner sep=3pt, inner ysep=2pt, yshift=-3pt,
+  },
   base box/.style={
     rectangle, rounded corners=3pt, line width=0.5pt,
     minimum height=0.55cm, font=\scriptsize, align=center, inner sep=3pt,
   },
 }
 
-% Helper: draw zone bg + border + title strip
-\newcommand{\drawzone}[6]{
-  % #1=line color, #2=bg color, #3=x0, #4=y0, #5=x1, #6=y1
+% Helper: paint a zone's background + border from its node anchors.
+% #1 = node name, #2 = line color, #3 = bg color
+\newcommand{\paintzone}[3]{%
   \begin{pgfonlayer}{background}
-    \fill[#2!50, rounded corners=4pt] (#3, #4) rectangle (#5, #6);
+    \fill[#3!50, rounded corners=4pt]
+      (#1.south west) rectangle (#1.north east);
   \end{pgfonlayer}
-  \draw[#1, line width=0.7pt, rounded corners=4pt]
-    (#3, #4) rectangle (#5, #6);
+  \draw[#2, line width=0.7pt, rounded corners=4pt]
+    (#1.south west) rectangle (#1.north east);
 }
 
-\newcommand{\zonetitle}[5]{
-  % #1=color #2=x0 #3=x1 #4=y_top #5=title
-  \pgfmathsetmacro\titleX{(#2 + #3) / 2}
-  \node[anchor=north, font=\small\bfseries, fill=#1, text=white,
-        rounded corners=2pt, inner sep=3pt, inner ysep=2pt]
-    at (\titleX, #4 - 0.15) {#5};
+% Helper: zone title strip pinned to a zone's north anchor.
+% #1 = node name, #2 = fill color, #3 = title text
+\newcommand{\paintztitle}[3]{%
+  \node[ztitle, fill=#2] at (#1.north) {#3};
 }
 
 \begin{document}
 \begin{tikzpicture}
 
 % =====================================================================
-% TITLE
+% BENTO FRAME — zones placed by construction (relative positioning)
+%   row1: LU (anchored) + RU (right=of LU, gap=\colgap)
+%   hero: full width, below=of LU, spanning LU.west .. RU.east
+%   row3: LD (below=of hero) + RD (right=of LD)
 % =====================================================================
+\node[zone, draw=acaTealLine] (LU) at (0,0) {};
+\node[zone, draw=acaBlueLine, right=\colgap of LU] (RU) {};
+
+% Hero spans the full bento width; width derived from LU.west .. RU.east.
+\node[herozone, draw=acaPurpleLine, below=\rowgap of LU.south west,
+      anchor=north west,
+      minimum width={\colw + \colgap + \colw}] (HERO) {};
+
+\node[zone, draw=acaGoldLine, below=\rowgap of HERO.south west,
+      anchor=north west] (LD) {};
+\node[zone, draw=acaGreenLine, right=\colgap of LD] (RD) {};
+
+% Zone backgrounds + borders (drawn from anchors only)
+\paintzone{LU}{acaTealLine}{acaTealBg}
+\paintzone{RU}{acaBlueLine}{acaBlueBg}
+\paintzone{HERO}{acaPurpleLine}{acaPurpleBg}
+\paintzone{LD}{acaGoldLine}{acaGoldBg}
+\paintzone{RD}{acaGreenLine}{acaGreenBg}
+
+% Zone title strips (pinned to .north of each zone)
+\paintztitle{LU}{acaTealLine}{Hyperparameters}
+\paintztitle{RU}{acaBlueLine}{Benchmark Performance}
+\paintztitle{HERO}{acaPurpleLine}{Core Architecture (Hero)}
+\paintztitle{LD}{acaGoldLine}{End-to-End Pipeline}
+\paintztitle{RD}{acaGreenLine}{Performance Metrics}
+
+% =====================================================================
+% TITLE — centred over the whole bento via calc midpoint
+% =====================================================================
+\coordinate (bentotop) at ($(LU.north west)!0.5!(RU.north east)$);
 \node[font=\Large\bfseries, color=acaPurpleLine, anchor=south]
-  at (10.5, 10.0) {Generic Model Card: An Example};
+  at ($(bentotop)+(0,0.55)$) {Generic Model Card: An Example};
 \node[font=\small, color=acaGreyLine, anchor=south]
-  at (10.5, 9.65) {Author et al., Venue 2026 \quad|\quad Pretrained on Dataset X};
+  at ($(bentotop)+(0,0.2)$)
+  {Author et al., Venue 2026 \quad|\quad Pretrained on Dataset X};
 
 % =====================================================================
-% LU PANEL: Hyperparameters table — x=[0, 9.5], y=[6, 9.5]
+% LU PANEL: Hyperparameters table — internals re-anchored to LU.center
 % =====================================================================
-\drawzone{acaTealLine}{acaTealBg}{0}{6.0}{9.5}{9.5}
-\zonetitle{acaTealLine}{0}{9.5}{9.5}{Hyperparameters}
-
-% Table at x=[0.4, 9.1], y=[6.3, 8.7]
-% Fix: was rowH=0.27 with inner-pad 0.15 — labels too close to table
-% border (cramped). rowH=0.28 gives 9*0.28=2.52cm tab height (fits zone
-% y=[6.0, 9.5]) with 0.18cm zone padding. Inner-pad 0.15→0.30cm.
-\def\xLU{0.4}\def\yLU{8.7}\def\rowH{0.28}\def\colW{8.7}
-\def\tabdata{%
-  Architecture/Transformer,%
-  Layers/24,%
-  Hidden d/1024,%
-  Heads/16,%
-  Head dim/64,%
-  FFN dim/4096,%
-  Context/2048,%
-  Vocab/32000,%
-  Params/350M%
-}
-\newcount\rowcount \rowcount=0
-\foreach \k/\v in \tabdata { \global\advance\rowcount by 1 }
-\edef\nrows{\the\rowcount}
-\pgfmathsetmacro\tabH{\nrows * \rowH}
-\draw[acaTealLine, line width=0.5pt]
-  (\xLU, \yLU - \tabH) rectangle (\xLU + \colW, \yLU);
-\foreach [count=\idx] \k/\v in \tabdata {
-  \pgfmathsetmacro\ypos{\yLU - (\idx - 1) * \rowH}
-  \pgfmathsetmacro\altfill{int(mod(\idx,2))}
-  \ifnum\altfill=0
-    \fill[acaTealBg!50] (\xLU, \ypos - \rowH) rectangle (\xLU + \colW, \ypos);
-  \fi
-  \node[anchor=west, font=\scriptsize, color=acaGreyLine]
-    at (\xLU + 0.30, \ypos - \rowH/2) {\k};
-  \node[anchor=east, font=\scriptsize\bfseries, color=acaTealLine]
-    at (\xLU + \colW - 0.30, \ypos - \rowH/2) {\v};
-}
-
-% =====================================================================
-% RU PANEL: Benchmark bar chart — x=[11, 21], y=[6, 9.5]
-% =====================================================================
-\drawzone{acaBlueLine}{acaBlueBg}{11.0}{6.0}{21.0}{9.5}
-\zonetitle{acaBlueLine}{11}{21}{9.5}{Benchmark Performance}
-
-% Chart at x=[11.8, 20.5], y=[6.3, 8.7]
-\def\xBC{11.8}\def\yBC{6.4}\def\bcW{8.5}\def\bcH{2.3}
-\draw[acaGreyLine, line width=0.4pt] (\xBC, \yBC) -- (\xBC + \bcW, \yBC);
-\draw[acaGreyLine, line width=0.4pt] (\xBC, \yBC) -- (\xBC, \yBC + \bcH);
-\foreach \pct in {0, 50, 100} {
-  \pgfmathsetmacro\ypos{\yBC + \bcH * \pct / 100}
-  \draw[acaGreyLine!25, line width=0.2pt]
-    (\xBC, \ypos) -- (\xBC + \bcW, \ypos);
-  \node[anchor=east, font=\tiny, color=acaGreyLine]
-    at (\xBC - 0.05, \ypos) {\pct};
-}
-
-% 6 bars at fixed x positions (hard-code to avoid foreach quirks)
-% bar width 0.6, gap 0.8, total = 6*0.6 + 5*0.8 = 7.6 cm → 8.5 cm chart, padding OK
-\foreach \i/\name/\val in {1/MMLU/72.5, 2/HumanEval/38.4, 3/GSM8K/55.8,
-                          4/BBH/48.0, 5/MATH/22.3, 6/ARC/82.6} {
-  \pgfmathsetmacro\cx{\xBC + 0.6 + (\i - 1) * 1.3}
-  \pgfmathsetmacro\bh{\bcH * \val / 100}
-  \pgfmathsetmacro\bxL{\cx - 0.3}
-  \pgfmathsetmacro\bxR{\cx + 0.3}
-  \pgfmathsetmacro\btop{\yBC + \bh}
-  \fill[acaBlueFill] (\bxL, \yBC) rectangle (\bxR, \btop);
-  \draw[acaBlueLine, line width=0.4pt] (\bxL, \yBC) rectangle (\bxR, \btop);
-  \node[font=\tiny\bfseries, color=acaBlueLine, anchor=south]
-    at (\cx, \btop + 0.02) {\val};
-  \node[font=\tiny, color=acaGreyLine, anchor=north]
-    at (\cx, \yBC - 0.05) {\name};
-}
-
-% =====================================================================
-% HERO CENTRAL ZONE: x=[0, 21], y=[1.5, 5.5]
-% =====================================================================
-\drawzone{acaPurpleLine}{acaPurpleBg}{0}{1.5}{21.0}{5.5}
-\zonetitle{acaPurpleLine}{0}{21}{5.5}{Core Architecture (Hero)}
-
-% Hero internal: 3 zones
-% Left: sub-module stack at x=[1, 6]
-\node[base box, fill=white, draw=acaPurpleLine, text=acaPurpleLine,
-      minimum width=4.5cm] (h1) at (3.5, 4.5) {Input Embedding};
-\node[base box, fill=acaPurpleBg, draw=acaPurpleLine, text=acaPurpleLine,
-      minimum width=4.5cm, minimum height=0.65cm] (h2) at (3.5, 3.8)
-  {Multi-Head Attention};
-\node[base box, fill=white, draw=acaPurpleLine, text=acaPurpleLine,
-      minimum width=4.5cm] (h3) at (3.5, 3.1) {Add \& Norm};
-\node[base box, fill=acaPurpleBg, draw=acaPurpleLine, text=acaPurpleLine,
-      minimum width=4.5cm, minimum height=0.65cm] (h4) at (3.5, 2.4)
-  {Feed-Forward Network};
-\foreach \a/\b in {h1/h2, h2/h3, h3/h4} {
-  \draw[-{Stealth[length=3pt]}, line width=0.4pt, color=acaGreyLine,
-        shorten >=1pt, shorten <=1pt]
-    (\a.south) -- (\b.north);
-}
-
-% Middle: attention heatmap at x=[8.5, 12.5]
-% Fix 4: heatmap was not horizontally centered in hero zone.
-% Hero zone center x = 10.5. Heatmap width = N*cs = 2.56cm.
-% So xH = 10.5 - 1.28 = 9.22 → heatmap center = 9.22 + 1.28 = 10.5 ✓
-\def\xH{9.22}\def\yH{4.3}\def\cs{0.32}\def\N{8}
-\foreach \i in {1,...,\N} {
-  \foreach \j in {1,...,\N} {
-    \pgfmathsetmacro\val{exp(-abs(\i-\j)/2.5)*100}
-    \pgfmathsetmacro\val{int(\val)}
-    \pgfmathsetmacro\cx{\xH + (\j - 0.5) * \cs}
-    \pgfmathsetmacro\cy{\yH - (\i - 0.5) * \cs}
-    \fill[cellHi!\val!cellLo]
-      (\cx - \cs/2, \cy - \cs/2) rectangle (\cx + \cs/2, \cy + \cs/2);
+% Local frame: origin at LU.center. Table block built in local coords so
+% it travels with the zone. Original colW=8.7, rowH=0.28, 9 rows.
+\begin{scope}[shift={(LU.center)}]
+  \def\colW{8.7}\def\rowH{0.28}
+  \def\tabdata{%
+    Architecture/Transformer,%
+    Layers/24,%
+    Hidden d/1024,%
+    Heads/16,%
+    Head dim/64,%
+    FFN dim/4096,%
+    Context/2048,%
+    Vocab/32000,%
+    Params/350M%
   }
-}
-\draw[step=\cs cm, acaGreyLine!30, line width=0.15pt]
-  (\xH, \yH) grid (\xH + \N*\cs, \yH - \N*\cs);
-\draw[acaPurpleLine, line width=0.5pt]
-  (\xH, \yH) rectangle (\xH + \N*\cs, \yH - \N*\cs);
-% Label removed: above caused overlap with hero title, below caused
-% overlap with zone bottom border. Heatmap visual is self-explanatory
-% in context of "Core Architecture (Hero)" zone with adjacent formulas.
-
-% Right: 2 formula boxes at x=[13.5, 20]
-% Use \footnotesize for formulas — matches surrounding box label size
-\node[rectangle, rounded corners=3pt, fill=acaPurpleBg,
-      draw=acaPurpleLine, line width=0.5pt, inner sep=4pt,
-      align=center, text=acaPurpleLine,
-      minimum width=6.0cm]
-  (form1) at (16.75, 4.3)
-  {{\scriptsize\bfseries Scaled Dot-Product}\\[2pt]
-   $\scriptstyle\text{Attn}(Q,K,V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V$};
-\node[rectangle, rounded corners=3pt, fill=white,
-      draw=acaPurpleLine, line width=0.5pt, inner sep=4pt,
-      align=center, text=acaPurpleLine,
-      minimum width=6.0cm]
-  (form2) at (16.75, 2.6)
-  {{\scriptsize\bfseries FFN}\\[2pt]
-   $\scriptstyle\text{FFN}(x) = W_2 \cdot \text{ReLU}(W_1 x + b_1) + b_2$};
+  \newcount\rowcount \rowcount=0
+  \foreach \k/\v in \tabdata { \global\advance\rowcount by 1 }
+  \edef\nrows{\the\rowcount}
+  \pgfmathsetmacro\tabH{\nrows * \rowH}
+  % Centre the table block: vertically nudge down a touch to clear title.
+  \pgfmathsetmacro\xL{-\colW/2}
+  \pgfmathsetmacro\yTop{\tabH/2 - 0.30}
+  \draw[acaTealLine, line width=0.5pt]
+    (\xL, \yTop - \tabH) rectangle (\xL + \colW, \yTop);
+  \foreach [count=\idx] \k/\v in \tabdata {
+    \pgfmathsetmacro\ypos{\yTop - (\idx - 1) * \rowH}
+    \pgfmathsetmacro\altfill{int(mod(\idx,2))}
+    \ifnum\altfill=0
+      \fill[acaTealBg!50] (\xL, \ypos - \rowH) rectangle (\xL + \colW, \ypos);
+    \fi
+    \node[anchor=west, font=\scriptsize, color=acaGreyLine]
+      at (\xL + 0.30, \ypos - \rowH/2) {\k};
+    \node[anchor=east, font=\scriptsize\bfseries, color=acaTealLine]
+      at (\xL + \colW - 0.30, \ypos - \rowH/2) {\v};
+  }
+\end{scope}
 
 % =====================================================================
-% LD PANEL: Pipeline — x=[0, 9.5], y=[-2.5, 1.0]
+% RU PANEL: Benchmark bar chart — internals re-anchored to RU.center
 % =====================================================================
-\drawzone{acaGoldLine}{acaGoldBg}{0}{-2.5}{9.5}{1.0}
-\zonetitle{acaGoldLine}{0}{9.5}{1.0}{End-to-End Pipeline}
-
-% Fix C.5: pipeline boxes were asymmetric (left 0.375cm vs right 0.075cm)
-% Center 5 boxes in zone x=[0, 9.5]: total content 5*1.65 + 4*0.2 = 9.05,
-% padding (9.5-9.05)/2 = 0.225 each side. First box center at 0.225+0.825=1.05
-\foreach \i/\name/\col in {1/Input/acaTealLine, 2/Embed/acaBlueLine,
-                          3/Encode/acaPurpleLine, 4/Decode/acaOrangeLine,
-                          5/Output/acaGreenLine} {
-  \pgfmathsetmacro\cx{1.05 + (\i - 1) * 1.85}
-  \node[rectangle, rounded corners=3pt, fill=white, draw=\col,
-        line width=0.5pt, font=\scriptsize\bfseries, text=\col,
-        minimum width=1.65cm, minimum height=0.55cm]
-    (pip\i) at (\cx, -0.5) {\name};
-}
-\foreach \a/\b in {1/2, 2/3, 3/4, 4/5} {
-  \draw[-{Stealth[length=3pt]}, line width=0.4pt, color=acaGreyLine,
-        shorten >=1pt, shorten <=1pt]
-    (pip\a.east) -- (pip\b.west);
-}
-\node[font=\scriptsize\itshape, color=acaGreyLine, anchor=north]
-  at (4.75, -1.3) {5-stage processing};
-
-% =====================================================================
-% RD PANEL: Metric cards — x=[11, 21], y=[-2.5, 1.0]
-% =====================================================================
-% Fix C.1: was {acaGreenLine}{acaGreenLine} → fill=#2!50 made solid
-% saturated green that drowned the white metric cards. Use the Bg
-% variant just like the other panels (LU/RU/Hero/LD).
-\drawzone{acaGreenLine}{acaGreenBg}{11.0}{-2.5}{21.0}{1.0}
-\zonetitle{acaGreenLine}{11}{21}{1.0}{Performance Metrics}
-
-% Metric cards (use \large not \Large — matches surrounding box font)
-\node[draw=acaGreenLine, fill=white, rounded corners=4pt,
-      line width=0.6pt, minimum width=3.5cm, minimum height=1.2cm,
-      align=center, inner sep=4pt]
-  at (13.5, -0.5)
-  {{\large\bfseries\color{acaGreenLine} 72.5\%}\\[1pt]
-   {\scriptsize\color{acaGreyLine} Average benchmark}};
-\node[draw=acaOrangeLine, fill=white, rounded corners=4pt,
-      line width=0.6pt, minimum width=3.5cm, minimum height=1.2cm,
-      align=center, inner sep=4pt]
-  at (18.5, -0.5)
-  {{\large\bfseries\color{acaOrangeLine} 350M}\\[1pt]
-   {\scriptsize\color{acaGreyLine} Parameters}};
-
-\node[font=\scriptsize\itshape, color=acaGreyLine, anchor=north]
-  at (16, -1.4) {SOTA on 4/6 benchmarks};
+\begin{scope}[shift={(RU.center)}]
+  % Local chart frame: width \bcW, height \bcH, baseline at \yBase.
+  \def\bcW{8.5}\def\bcH{2.3}
+  \pgfmathsetmacro\xBase{-\bcW/2}
+  \pgfmathsetmacro\yBase{-1.0}
+  \draw[acaGreyLine, line width=0.4pt] (\xBase, \yBase) -- (\xBase + \bcW, \yBase);
+  \draw[acaGreyLine, line width=0.4pt] (\xBase, \yBase) -- (\xBase, \yBase + \bcH);
+  \foreach \pct in {0, 50, 100} {
+    \pgfmathsetmacro\ypos{\yBase + \bcH * \pct / 100}
+    \draw[acaGreyLine!25, line width=0.2pt]
+      (\xBase, \ypos) -- (\xBase + \bcW, \ypos);
+    \node[anchor=east, font=\tiny, color=acaGreyLine]
+      at (\xBase - 0.05, \ypos) {\pct};
+  }
+  % 6 bars: spacing 1.3, width 0.6, first bar centre at \xBase + 0.6.
+  \foreach \i/\name/\val in {1/MMLU/72.5, 2/HumanEval/38.4, 3/GSM8K/55.8,
+                            4/BBH/48.0, 5/MATH/22.3, 6/ARC/82.6} {
+    \pgfmathsetmacro\cx{\xBase + 0.6 + (\i - 1) * 1.3}
+    \pgfmathsetmacro\bh{\bcH * \val / 100}
+    \pgfmathsetmacro\bxL{\cx - 0.3}
+    \pgfmathsetmacro\bxR{\cx + 0.3}
+    \pgfmathsetmacro\btop{\yBase + \bh}
+    \fill[acaBlueFill] (\bxL, \yBase) rectangle (\bxR, \btop);
+    \draw[acaBlueLine, line width=0.4pt] (\bxL, \yBase) rectangle (\bxR, \btop);
+    \node[font=\tiny\bfseries, color=acaBlueLine, anchor=south]
+      at (\cx, \btop + 0.02) {\val};
+    \node[font=\tiny, color=acaGreyLine, anchor=north]
+      at (\cx, \yBase - 0.05) {\name};
+  }
+\end{scope}
 
 % =====================================================================
-% BOTTOM-MOST: Color Legend strip — y=[-3.5, -3.0]
+% HERO PANEL: 3 internal sub-zones — all re-anchored to HERO.center
 % =====================================================================
+% Hero internal layout (local coords, origin at HERO.center):
+%   Left:   sub-module stack
+%   Middle: attention heatmap (centred at local x=0)
+%   Right:  2 formula boxes
+\begin{scope}[shift={(HERO.center)}]
+  % --- Left: sub-module stack (4 boxes), centred near local x=-7 ---
+  \def\lx{-7.0}
+  \node[base box, fill=white, draw=acaPurpleLine, text=acaPurpleLine,
+        minimum width=4.5cm] (h1) at (\lx, 1.0) {Input Embedding};
+  \node[base box, fill=acaPurpleBg, draw=acaPurpleLine, text=acaPurpleLine,
+        minimum width=4.5cm, minimum height=0.65cm] (h2) at (\lx, 0.3)
+    {Multi-Head Attention};
+  \node[base box, fill=white, draw=acaPurpleLine, text=acaPurpleLine,
+        minimum width=4.5cm] (h3) at (\lx, -0.4) {Add \& Norm};
+  \node[base box, fill=acaPurpleBg, draw=acaPurpleLine, text=acaPurpleLine,
+        minimum width=4.5cm, minimum height=0.65cm] (h4) at (\lx, -1.1)
+    {Feed-Forward Network};
+  \foreach \a/\b in {h1/h2, h2/h3, h3/h4} {
+    \draw[-{Stealth[length=3pt]}, line width=0.4pt, color=acaGreyLine,
+          shorten >=1pt, shorten <=1pt]
+      (\a.south) -- (\b.north);
+  }
+
+  % --- Middle: attention heatmap, centred at local x=0 ---
+  \def\cs{0.32}\def\N{8}
+  \pgfmathsetmacro\xH{-\N*\cs/2}
+  \pgfmathsetmacro\yH{\N*\cs/2}
+  \foreach \i in {1,...,\N} {
+    \foreach \j in {1,...,\N} {
+      \pgfmathsetmacro\val{exp(-abs(\i-\j)/2.5)*100}
+      \pgfmathsetmacro\val{int(\val)}
+      \pgfmathsetmacro\cx{\xH + (\j - 0.5) * \cs}
+      \pgfmathsetmacro\cy{\yH - (\i - 0.5) * \cs}
+      \fill[cellHi!\val!cellLo]
+        (\cx - \cs/2, \cy - \cs/2) rectangle (\cx + \cs/2, \cy + \cs/2);
+    }
+  }
+  \draw[step=\cs cm, acaGreyLine!30, line width=0.15pt]
+    (\xH, \yH) grid (\xH + \N*\cs, \yH - \N*\cs);
+  \draw[acaPurpleLine, line width=0.5pt]
+    (\xH, \yH) rectangle (\xH + \N*\cs, \yH - \N*\cs);
+
+  % --- Right: 2 formula boxes, centred near local x=6.25 ---
+  \def\rx{6.25}
+  \node[rectangle, rounded corners=3pt, fill=acaPurpleBg,
+        draw=acaPurpleLine, line width=0.5pt, inner sep=4pt,
+        align=center, text=acaPurpleLine, minimum width=6.0cm]
+    (form1) at (\rx, 0.8)
+    {{\scriptsize\bfseries Scaled Dot-Product}\\[2pt]
+     $\scriptstyle\text{Attn}(Q,K,V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V$};
+  \node[rectangle, rounded corners=3pt, fill=white,
+        draw=acaPurpleLine, line width=0.5pt, inner sep=4pt,
+        align=center, text=acaPurpleLine, minimum width=6.0cm]
+    (form2) at (\rx, -0.9)
+    {{\scriptsize\bfseries FFN}\\[2pt]
+     $\scriptstyle\text{FFN}(x) = W_2 \cdot \text{ReLU}(W_1 x + b_1) + b_2$};
+\end{scope}
+
+% =====================================================================
+% LD PANEL: Pipeline — internals re-anchored to LD.center
+% =====================================================================
+\begin{scope}[shift={(LD.center)}]
+  % 5 boxes centred horizontally about local x=0. Pitch 1.85, width 1.65.
+  % First-box offset so the 5-box block is symmetric: -(5-1)/2 * pitch.
+  \foreach \i/\name/\col in {1/Input/acaTealLine, 2/Embed/acaBlueLine,
+                            3/Encode/acaPurpleLine, 4/Decode/acaOrangeLine,
+                            5/Output/acaGreenLine} {
+    \pgfmathsetmacro\cx{(\i - 3) * 1.85}
+    \node[rectangle, rounded corners=3pt, fill=white, draw=\col,
+          line width=0.5pt, font=\scriptsize\bfseries, text=\col,
+          minimum width=1.65cm, minimum height=0.55cm]
+      (pip\i) at (\cx, 0.25) {\name};
+  }
+  \foreach \a/\b in {1/2, 2/3, 3/4, 4/5} {
+    \draw[-{Stealth[length=3pt]}, line width=0.4pt, color=acaGreyLine,
+          shorten >=1pt, shorten <=1pt]
+      (pip\a.east) -- (pip\b.west);
+  }
+  \node[font=\scriptsize\itshape, color=acaGreyLine, anchor=north]
+    at (0, -0.55) {5-stage processing};
+\end{scope}
+
+% =====================================================================
+% RD PANEL: Metric cards — internals re-anchored to RD.center
+% =====================================================================
+\begin{scope}[shift={(RD.center)}]
+  \node[draw=acaGreenLine, fill=white, rounded corners=4pt,
+        line width=0.6pt, minimum width=3.5cm, minimum height=1.2cm,
+        align=center, inner sep=4pt]
+    at (-2.5, 0.25)
+    {{\large\bfseries\color{acaGreenLine} 72.5\%}\\[1pt]
+     {\scriptsize\color{acaGreyLine} Average benchmark}};
+  \node[draw=acaOrangeLine, fill=white, rounded corners=4pt,
+        line width=0.6pt, minimum width=3.5cm, minimum height=1.2cm,
+        align=center, inner sep=4pt]
+    at (2.5, 0.25)
+    {{\large\bfseries\color{acaOrangeLine} 350M}\\[1pt]
+     {\scriptsize\color{acaGreyLine} Parameters}};
+  \node[font=\scriptsize\itshape, color=acaGreyLine, anchor=north]
+    at (0, -0.65) {SOTA on 4/6 benchmarks};
+\end{scope}
+
+% =====================================================================
+% LEGEND strip — anchored below the bottom row (tracks LD/RD)
+% =====================================================================
+\coordinate (legL) at ($(LD.south west)+(1.0,-0.6)$);
 \node[font=\scriptsize\bfseries, color=acaGreyLine, anchor=east]
-  at (1.0, -3.2) {Legend:};
+  at (legL) {Legend:};
 \foreach \i/\col/\lab in {%
   1/acaTealLine/Hyperparams,%
   2/acaBlueLine/Benchmarks,%
@@ -278,10 +328,10 @@
   4/acaGoldLine/Pipeline,%
   5/acaGreenLine/Metrics%
 } {
-  \pgfmathsetmacro\lx{1.5 + (\i - 1) * 4.0}
-  \fill[\col] (\lx, -3.3) rectangle (\lx + 0.25, -3.1);
+  \coordinate (lsw) at ($(legL)+(0.5,0)+(\i*4.0-4.0,0)$);
+  \fill[\col] ($(lsw)+(0,-0.1)$) rectangle ($(lsw)+(0.25,0.1)$);
   \node[anchor=west, font=\tiny, color=acaGreyLine]
-    at (\lx + 0.3, -3.2) {\lab};
+    at ($(lsw)+(0.3,0)$) {\lab};
 }
 
 \end{tikzpicture}
