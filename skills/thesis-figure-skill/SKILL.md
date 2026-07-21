@@ -82,7 +82,7 @@ description: |
 
 **Batch 17 fig153 教训**：Philosophy 文本指南让 sub-agent **知道要嵌入 viz / panel / 公式**，但**写出来的视觉重量、留白、配色协调仍然失败**——因为这些是 visual perception 而非 textual 任务。
 
-**解决方案**：`references/tikz-snippets/` 提供 **21 个手工精雕的 TikZ 片段 + 21 个 PNG 预览 + 1 个组合规则文档**——sub-agent **看 PNG 选 + 复制粘贴 + 替换参数 + 按组合规则拼装**即可达到 examples 标杆。
+**解决方案**：`references/tikz-snippets/` 提供 **21 个手工精雕的 TikZ 片段（各带 PNG 预览）+ 6 个 example-skeleton + 1 个组合规则文档**（完整清单见该目录 `README.md`）——sub-agent **看 PNG 选 + 复制粘贴 + 替换参数 + 按组合规则拼装**即可达到 examples 标杆。
 
 **5 大类零件**（详见 `references/tikz-snippets/README.md` inline gallery）：
 
@@ -173,11 +173,31 @@ skill 现在支持 **4 种生成路径**——画图前必须先确定走哪条�
 
 **关键认识**：步骤① 的输出不是"最大复杂度版本"。先判断论文实际复杂度（极简/中等/复杂/超复杂），再选画图档位。**从复杂版起步然后修瑕疵**比**从合适档位起步**累计 token 高一个数量级——MMAlign 11 轮迭代就是反面教材。
 
+#### ①.0 图契约（动笔/选 form 前先写，≤6 行；极简档可一句话带过）
+
+**conclusion-first：先确定"这张图要证明什么"，再选最小结构——而不是先挑模板再填内容。** 写进 figure.tex 头部注释块**最顶部**：
+
+```
+核心结论：<一句话，必须带动词。如"X 通过 Z 把 Y 降低"——不是"X 的结果"/"系统架构">
+图原型：<对应 skeleton/mode：横向流水线=B / 中心 hero=C / 纵向侧栏=D / 多模态融合=E / 多阶段多子图=F / 联邦纵向=G / 纯几何·对比=无 skeleton>
+证据层级：hero（最该被 5 秒记住的那块）=<…>；支撑=<…，视觉上更安静，不抢 hero>
+能不能更少？：<去掉哪个框/panel 后仍能证明核心结论？能去就去——每个元素必须挣到位置>
+```
+
+**为什么加这一步**（借鉴 nature-figure 的 figure-contract，砍掉其 Python/SVG/统计字段）：
+- **核心结论** = ④.5 Step 0「审稿人 5 秒记住什么」的标准答案，提前钉死，避免画完才发现没重点。
+- **图原型直接决定档位与 skeleton —— 判档看原型，不是数节点**（消解下面的"节点数悖论"：原型一旦定了，form 和档位随之确定）。
+- **「能不能更少」是反 AI-slop 的硬约束**：把 Philosophy 的"每个元素earn its place"变成动笔前的一次显式删减，而不是 ④.5 事后做无用功。
+
+**极简档**：核心结论写一句、图原型选「纯几何·对比」即可，证据层级/能不能更少可略。
+
 **🔴 强制物质化要求**（fig126 Tacotron2 教训：sub-agent 加载 step1 但跳过实际输出，产生大块空白）：
 
 步骤 ① 必须**以文字形式实际输出**（不是"想了就过"），且**第一段写进 figure.tex 头部注释块**作为证据。**形式两选一**，按图复杂度选：
 
 **🔵 form A/B 选择前的先决条件**（消除"节点数悖论"——判档依赖草图、草图依赖判档的循环）：
+
+**首选信号 = ①.0 的图原型**（原型一旦定下，form 与档位随之确定，不必先数节点）：C/E/F/G 原型 → 复杂档 → form B；B 原型 → 中等或复杂档 → form A 或 B；纯几何·对比原型 → 极简档 → form A。原型仍模糊时，再用下面的兜底信号：
 
 ```
 1. 先粗估档位（无需精确节点数，先看明显信号）：
@@ -364,11 +384,14 @@ grep "Missing character" file.log     # 静默失败检查，关键
 pdftoppm -png -r 300 file.pdf out     # 产出 out-1.png
 # overlap.json 落在 .tex 同目录（sub-agent ④.5 步用 Read 读这个绝对路径）
 python3 references/pdf-overlap-checker.py file.pdf --json > "$(dirname file.pdf)/overlap.json"
-# 跑完检查 overlap.json — 7 类检测：
-#   基础 5 类（直接 fix）: text-overlap / text-overflow / off-center / text-line / line-crossing
+# 跑完检查 overlap.json — 8 类检测：
+#   基础 6 类（直接 fix）: text-overlap / text-overflow / off-center / text-line
+#                         / line-crossing / node-outside-zone
 #   candidate 2 类（需 triage）: line-through-node / node-overlap
 # ERROR 类大概率是真 bug 直接修；candidate 类是几何线索（heatmap 矩阵 / fan-in 收敛
 # / panel 边界等常误报），sub-agent 在 ④.5 自评时按坐标对照 PNG 决定 fix 还是 ignore。
+# node-outside-zone = 子框「内容超容器尺寸」溢出所属 zone（经典 mode-A 失败：换了更长的
+# 文字/内容，撑破 skeleton 的固定宽度）。FP-safe 设计（只抓真比 zone 大的框），命中即真 bug。
 ```
 draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawio && pdftoppm -png -r 300 out.pdf out`。
 
@@ -383,8 +406,8 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 ```
 0. Read 渲染出的 out-1.png + 视觉直觉先行（应用 3 大法则，见下）
 1. Read overlap.json（路径 = .tex 同目录的 overlap.json，步骤 ④ 跑出来的结构化几何检测）
-2. 加载 references/visual-review-checklist.md（18 项强制审查清单）
-3. 逐项回答 46 个 Y/N：S1-S10（空间）/ T1-T7（文字）/ M1-M10（语义）/ E1-E14（连线精度）/ A1-A5（美学）
+2. 加载 references/visual-review-checklist.md（强制审查清单——**条目与数量以该文件为唯一真相源**，本文件不另定数量或 ID 范围）
+3. 逐项回答 checklist 中列出的**全部条目** Y/N（维度：编译 T / 空间 S / 语义 M / 连线 E / 美学 A·V）
    每项必须有一句证据（"我在 PNG 中看到…" 或 "overlap.json 中 N 处 line-through-node 我标为 …"），不允许凭印象
 4. 任一项 N → 列入 blocker → 输出 patch → Edit → 回 ④ 重编译 → 回 0
 5. Step 0 + 全部 18 项 Y → **把图给用户看**（用户终审，AI 视觉有盲区）
@@ -480,12 +503,16 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 **机制**：用 Agent 工具 / workflow **真正并行 spawn 出 4 个独立子 agent**（每镜头喂 PNG 路径 + 该图"应有模型"让 semantic 独立重算）。**关键是"另起 agent + 空白上下文 + 对抗 + 多视角"——这是 mode C 唯一奏效的兜底；同上下文自审多遍不算数（实测会连同 generator 一起漏）。**
 
+**🔴 gate 通过的硬性举证（杜绝静默 self-pass）**：声称本 gate 通过前，orchestrator 必须在回复里**列出 4 个真实 spawn 出的审查 agent 的 ID/标签**，并**各引一句它返回的具体视觉证据**（如"geometry：同心三环圆心实测偏移 ~0.4cm"）。**给不出 4 个独立 agent 的 ID + 各自证据 = gate 视为未通过**，不得当作通过交付。
+
+**🔴 spawn 不出独立 agent 时：停，不要自审蒙混**。若当前环境无法真正另起 4 个空白上下文 agent（只有重量级 team 工具 / 无轻量 spawner），**禁止**降级成"同上下文自审 4 遍"假装过 gate。正确做法：把图连同一行明确声明 **"⚠️ mode C 独立多镜头 gate 未能运行（环境无独立 spawner），以下结果未经对抗审查"** 一起交给用户，请用户人工充当对抗审查、或换到可 spawn 的环境再跑。**"gate 未运行"是交付阻断项（blocker），不是可跳过的软步骤**——宁可显式声明没跑，也不要让用户误以为已过 gate。
+
 ### ⑤ 用户终审 + 交付
 1. **把 PNG 给用户看**（不是询问"我做完了吗"，是直接展示结果）
 2. 有参考图时同时跑 `python3 references/figure-diff.py <ref.png> <out.png>` 得 SSIM；< 0.85 的 3×3 区域和用户一起重点看
 3. 用户指出问题 → 回 ④.5，把问题作为新一轮 blocker；用户没问题 → 交付
 
-**步骤⑤ 不再独立做"自审三遍法"**——所有自审已经在 ④.5 的 30 项穷举里做过。把同一组审查做两次只是认知疲劳的来源，不是质量提升。
+**步骤⑤ 不再独立做"自审三遍法"**——所有自审已经在 ④.5 对 checklist 全部条目的穷举里做过。把同一组审查做两次只是认知疲劳的来源，不是质量提升。
 
 ### ⑥ 迭代到完美（无上限）
 
@@ -520,8 +547,8 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 Φ.2 — Vision-audit 把关（简化版 ④.5）
    - Read 渲染出的 PNG
-   - 走 Step 0（3 大法则）+ 18 项中的关键 6 项（S1 整图对齐 / S5 元素间距 /
-     T1 文字渲染 / M3 信息流方向 / E5 箭头清晰 / V1 整体审美）
+   - 走 Step 0（3 大法则）+ checklist 中的关键 6 项（S1 标签不重叠 / S9 元素间距 /
+     T1 文字渲染 / M3 信息流方向 / E1 箭头清晰止于框外 / V1 整体审美）
    - 任何 blocker → 报告给用户，要求修复后再入库
 
 Φ.3 — 分析 layout pattern + 决策入库方式（**关键 gate**）
@@ -580,7 +607,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
    - 写文件：`references/tikz-snippets/example-skeleton-{X}.tex`（X = 完整文件名前缀）
    - 渲染：`xelatex -interaction=nonstopmode` + `pdftoppm -r 100 -png`
      **PNG 输出到 `references/tikz-snippets/previews/example-skeleton-{X}.png`**
-     （注意是 `previews/` 子目录，不是 `tikz-snippets/` 根，与现有 6 个一致）
+     （注意是 `previews/` 子目录，不是 `tikz-snippets/` 根，与现有 example-skeleton 预览放在一起）
    - 更新 `references/tikz-snippets/README.md` inline gallery：
      a) 定位 gallery 表（anchor 行：含 `example-skeleton-B-horizontal.tex` 的 markdown 表格）
      b) 插入位置：
@@ -651,7 +678,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 | 步骤③ 决策门 | `references/figure-spec.schema.md`（B 路 spec） |
 | 步骤③ 走 B 路 → 跑 `dot-to-tikz.py` | （脚本，不需 Read） |
 | 步骤③ 走模板/从零 → 用 TikZ | `references/tikz-global-rules.md` + `references/tikz-template.tex` |
-| **步骤③ 复杂档需嵌入 viz / panel / 公式** | **`references/tikz-snippets/` ⭐ 优先用 snippet 拼装而不是从零写**（含 6 个手工精雕模板：attention-heatmap / bar-chart / hyperparams-table / multi-zone-palette / pipeline-stages / formula-box） |
+| **步骤③ 复杂档需嵌入 viz / panel / 公式** | **`references/tikz-snippets/` ⭐ 优先用 snippet 拼装而不是从零写**（含 21 个手工精雕片段 + 6 个 example-skeleton，**完整清单见 `references/tikz-snippets/README.md`**；下列只是常用几个，勿局限：attention-heatmap / bar-chart / hyperparams-table / multi-zone-palette / pipeline-stages / formula-box …） |
 | 步骤④.5 视觉反馈每一轮 | `references/visual-review-checklist.md`（18 项强制清单） |
 | 配色需求 | `references/tikz-colors.md` |
 | 分层架构图 | `references/layered-architecture.md` |
@@ -672,7 +699,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 | `dot-to-tikz.py <spec.json>` | B 路：spec → graphviz 自动布局 → TikZ | 结构化图 step ③ |
 | `tikz-validator.py <file.tex>` | 微斜线/溢出/碰撞/方向反转（几何/语法 gate） | 编译前必跑 |
 | `tikz-design-linter.py <file.tex> [--type ...]` | 元素数/尺寸比/线型/hero/嵌入viz（设计野心 gate） | 编译前必跑 |
-| `pdf-overlap-checker.py <file.pdf> [--json]` | PDF 坐标级重叠 + 线穿节点 + 节点重叠几何检测（**7 类**：text-overlap / text-overflow / off-center / text-line / line-crossing / line-through-node / node-overlap） | 编译后必跑 |
+| `pdf-overlap-checker.py <file.pdf> [--json]` | PDF 坐标级重叠 + 线穿节点 + 节点重叠 + 子框超出 zone 几何检测（**8 类**：text-overlap / text-overflow / off-center / text-line / line-crossing / node-outside-zone / line-through-node / node-overlap） | 编译后必跑 |
 | `figure-diff.py <ref.png> <out.png>` | SSIM + 3×3 区域差异 | 复刻任务必跑 |
 | `tikz-path-router.py <spec.json>` | A* 自动避障路径 | 连线 ≥8 条可选 |
 
@@ -681,3 +708,18 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 ## 领域自适应
 
 收到输入后**先识别论文领域**（计算机/密码学/生物/物理/化学/AI/网络/系统/区块链等），以该领域专家身份选术语和布局风格。
+
+---
+
+## 维护者回归自检（⚠️ 不在画图流程内 —— 生成图时不要跑）
+
+**仅当你在修改本 skill（SKILL.md / references / 脚本）时使用。** 改动前后各跑一次，确认这次编辑没有
+引入"几何/编译可检测"的回归：
+
+```bash
+cd references/eval && python3 runner.py      # 改前确认全绿；改后若有 FAIL 即本次回归
+```
+
+它对一组冻结 fixture 跑 `dot-to-tikz → xelatex → tikz-validator → pdf-overlap-checker`，与 baseline 比对，
+退出码 1 = 有回归。**只是回归地板**：抓编译/缺字/微斜线/重叠等几何问题，**抓不到**语义/审美 slop（那些靠 ④.5）。
+详见 `references/eval/README.md`。新增检查项或确认新基准后再 `python3 runner.py --update-baselines`。

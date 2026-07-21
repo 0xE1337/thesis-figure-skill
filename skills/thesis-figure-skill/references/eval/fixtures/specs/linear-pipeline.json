@@ -1,0 +1,21 @@
+{
+  "title": "Linear pipeline (encoder-decoder)",
+  "layout": { "engine": "dot", "rankdir": "LR", "nodesep": 0.6, "ranksep": 1.1 },
+  "colors": "academic",
+  "zones": [
+    { "id": "core", "label": "Backbone", "members": ["enc", "lat", "dec"], "color": "blue" }
+  ],
+  "nodes": [
+    { "id": "in",  "label": "Input $x$",        "color": "grey",   "size": "small",  "shape": "rect" },
+    { "id": "enc", "label": "Encoder $E$",       "color": "blue",   "size": "normal", "shape": "rect" },
+    { "id": "lat", "label": "Latent $z$",        "color": "purple", "size": "normal", "shape": "circle" },
+    { "id": "dec", "label": "Decoder $D$",       "color": "green",  "size": "normal", "shape": "rect" },
+    { "id": "out", "label": "Output $\\hat{x}$", "color": "grey",   "size": "small",  "shape": "rect" }
+  ],
+  "edges": [
+    { "from": "in",  "to": "enc", "style": "main" },
+    { "from": "enc", "to": "lat", "style": "main", "label": "$\\mathbf{h}$" },
+    { "from": "lat", "to": "dec", "style": "main" },
+    { "from": "dec", "to": "out", "style": "main" }
+  ]
+}
