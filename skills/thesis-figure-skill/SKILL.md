@@ -98,7 +98,7 @@ description: |
 
 **复杂档强制流程**：
 1. **先读 `references/tikz-snippets/README.md`** —— inline gallery 含每个 snippet 的 PNG 预览
-2. **首选**：复制完整 `example-skeleton-B-horizontal.tex`（pipeline 类）或 `example-skeleton-C-centralhero.tex`（hero+panels 类）作 figure.tex，改 content 不动 layout
+2. **首选**：复制完整 `example-skeleton-B-horizontal.tex`（pipeline 类）或 `example-skeleton-C-centralhero.tex`（hero+panels 类）作 figure.tex，改 content 不动 layout（连线拓扑与需求语义不匹配时按「mode A 拓扑逃生舱」改拓扑，见 4 路径一节）
 3. **次选**（特殊布局需求）：看 PNG 选 ≥ 3 snippet 自己拼装
 4. **必读 `COMPOSITION-RULES.md`** —— 解决"snippets 都塞进去但仍乱"问题
 5. **底部必有** color-legend OR summary-bar
@@ -149,14 +149,14 @@ skill 现在支持 **4 种生成路径**——画图前必须先确定走哪条�
 
 | 路径 | 触发关键词（用户原 prompt） | 说明 | 状态 |
 |---|---|---|---|
-| **A — Skeleton 复用** | "画一张 X 图"、"帮我画 Y"、未明示其他 | 从已验证 skeleton (B/C/D/E/F/G) 选一个，**复制全部 + 改 content + 不动 layout**。最快、最稳。输出视觉与 skeleton 相近 | ✅ 默认 |
+| **A — Skeleton 复用** | "画一张 X 图"、"帮我画 Y"、未明示其他 | 从已验证 skeleton (B/C/D/E/F/G) 选一个，**复制全部 + 改 content + 不动 layout 常量**；需求语义与 skeleton 连线拓扑不匹配时走**「mode A 拓扑逃生舱」**（见下）。⚠️ mode A 高发缺陷=语义被 skeleton 拓扑绑架（stale-semantics），④.5 文末 gate 对 A 同样强制 | ✅ 默认 |
 | **B — Remix（跨 skeleton 拼模块）** | "组合 D 的雷达 + G 的图表那种"、"想要 X 的左半 + Y 的右半" | 多选 skeleton 部件，自动拼装 | 🚧 暂未实装，**回退到 A** |
 | **C — 原创设计** | "独特版面"、"复刻这张 ref.png"、"从零设计"、"我没有合适的 skeleton" | 从零设计 layout（Module-First ③.A→③.D）→ **强制独立多镜头审查 gate**（④.5 文末）。⚠️ mode C 最易在"图里最新、无 skeleton 先例的那个结构"上崩，且 generator 自审对此**结构性失明** | ✅ 现有路径 |
 | **D — 沉淀入库** | "把这张 .tex 存进库"、"作为新 skeleton"、"添加到 examples"、"沉淀到模板库" | 用户已有 .tex → 自动入库为 `example-skeleton-{H..Z}-<topic>.tex` | ✅ 走 **Φ 沉淀通道** |
 
-**走 A** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走 A 路：从 6 个 skeleton 选最匹配的 → 复制全部 → 改 content / 不动 layout / 严格遵守 CONSTRAINTS section）
+**走 A** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走 A 路：从 6 个 skeleton 选最匹配的 → 复制全部 → 改 content / 不动 layout 常量 / 严格遵守 CONSTRAINTS section；连线拓扑与需求语义冲突时**必须**走「mode A 拓扑逃生舱」；④.5 **必走「独立多镜头审查 gate」**——与 mode C 同一道，见 ④.5 文末）
 **走 B** → 当前不可用。报告用户"Remix 模式暂未实装，当前请用 A skeleton 复用；如果你想要的部件组合在某个 skeleton 里近似存在，可以直接走 A 选最接近的"
-**走 C** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走从零路 + Module-First ③.A→③.D 子流程；④.5 **必走「mode C 独立多镜头审查 gate」**——见 ④.5 文末，不可只靠 generator 自审）
+**走 C** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走从零路 + Module-First ③.A→③.D 子流程；④.5 **必走「独立多镜头审查 gate」**——见 ④.5 文末，不可只靠 generator 自审）
 **走 D** → **跳过 ①-⑦**，直接进 **Φ 沉淀通道**（见文末）
 
 **判断规则**（按优先级）：
@@ -165,7 +165,13 @@ skill 现在支持 **4 种生成路径**——画图前必须先确定走哪条�
 3. 用户提到 "独特 / 原创 / 复刻 / from scratch / 无参考图" → **弱 C**（询问确认走 A 还是 C）
 4. 其余 → **A**（不需要询问，直接走 skeleton 路径）
 
-**模式选择对编译验证 / vision-audit 的影响**：A 模式因为 skeleton 已经过版面验证，④.5 重点放在"内容是否完全脱离 skeleton 主题（renaming 漏掉、stale 标签）"上；**C 模式走完整 18 项 checklist + 强制「独立多镜头审查 gate」**（generator 自审在 mode C 实测 3/3 漏掉核心缺陷，必须外部对抗审查兜底）；D 模式走 Φ.2 简化版 audit。
+**模式选择对编译验证 / vision-audit 的影响**：A 模式因为 skeleton 已经过版面验证，④.5 重点放在"内容是否完全脱离 skeleton 主题（renaming 漏掉、stale 标签）+ **连线拓扑是否还在讲 skeleton 原来的故事**（stale-semantics）"上，且**同样必须过「独立多镜头审查 gate」**（2026-07-22 实测：mode A 复用图 checker 全绿、生成方自审通过，独立 gate 仍抓出 3 个 HIGH 语义缺陷——skeleton 复用的语义缺陷率不比 mode C 低）；**C 模式走完整 18 项 checklist + 同一道 gate**（generator 自审在 mode C 实测 3/3 漏掉核心缺陷，必须外部对抗审查兜底）；D 模式走 Φ.2 简化版 audit。
+
+**mode A 拓扑逃生舱（2026-07-22 实测坐实）**：skeleton 的连线拓扑是为它原来的故事设计的——当用户需求的数据流与之不匹配（典型症状：子步骤间缺内部流程箭头、fan-out 目标错位被读成错误分发、闭环/回传通道缺失），**"只改 content 不动拓扑"会让语义被 skeleton 绑架：图看起来对、读起来错**。实测案例（纵向联邦学习 × skeleton-F）：生成方自己把两条语义缺陷列进"遗留问题"，仍因"不改拓扑"规则照常交付，独立 gate 判 REJECT。规则：
+1. ①.0 图契约写完后，**显式核对 skeleton 连线拓扑 vs 需求数据流**，不匹配处逐条列出——不允许"语义松弛处理"后沉默交付。
+2. 需要改拓扑时**允许且必须改**，但只能用 by-construction 方式：新连线走 node anchor（`.east`/`.west`）、fan-out 用 trunk+spine+stub canonical、长回环拆段挂 zone anchor——**禁止手填绝对坐标**（实测：按此方式改拓扑 3 处 + 框加行，几何零新伤，下游元素 anchor 自动回流）。
+3. 改动的拓扑记录进 figure.tex 头部契约注释（改了什么、为什么），供 ④.5 与 gate 审查。
+4. **已知语义遗留 = blocker，不是"遗留问题"**——生成方列得出来的语义缺陷必须修掉或升级给用户拍板，不允许自知有缺陷仍按"规则不让改"交付。
 
 ### ① 画图指令（强制显式输出，不可跳过）
 
@@ -466,14 +472,14 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 **升级机制**：
 - 第 3 轮还有 ≥5 blocker → 局部修补无救，回步骤① 重新设计画图指令
 - 同一 blocker 连续 2 轮没修好 → 你修的方向错了，换思路
-- 复杂图（≥40 元素）/ **mode C 一律**：并行 spawn 多镜头审查 agent（见下「mode C 独立多镜头审查 gate」），统一收集 blocker
+- **mode A / mode C 一律**（简单图也不可免；复杂图 ≥40 元素更是）：并行 spawn 多镜头审查 agent（见下「独立多镜头审查 gate」），统一收集 blocker
 - **自评 + 对抗 agent 全部说 0 blocker 后，仍然把图先给用户看**——人眼能发现 sub-agent + 自评全漏掉的问题（实测案例：用户在 Round 10 一眼指出 CMAM 标题切断边框、箭头刺入框内、junction dot 被 tip 戳——这 3 个我和 2 个对抗 agent 全没发现）。**用户的视觉是最后闸门，不是绕过点**。
 
 **强制约束**：交付前必须能说出 PNG 里**具体的视觉细节**（哪些颜色在哪、哪个 zone 在哪一侧、热力图对角线特征等），证明你视觉输入过。
 
 **单点最小修改原则**：每轮 patch 只改一类问题（如"全部标签重叠"或"全部轴标题没下移"），不要一轮里大改——大改会引入新 bug。一轮一类 blocker。优先用 `yshift/xshift` 微调位置，避免改坐标主框架。
 
-#### mode C 强制独立多镜头审查 gate（2026-05-29 mode C 测试坐实，不可跳过）
+#### 强制独立多镜头审查 gate——mode A + mode C 默认路径（2026-05-29 mode C 坐实、2026-07-22 mode A 坐实，不可跳过）
 
 **为什么强制**：mode C 测试（同心圆 / Sankey / RLHF 闭环，3 张从零图）实测 **3/3 都崩，且每次崩在不同轴上**，但有统一规律——**图里最"新"、最无 skeleton 先例的那个结构元素，就是崩点**：
 - 同心圆 → 现编的多面板**数字叙事自相矛盾**（核心层在威胁锥里没削弱却号称拦 99%）
@@ -482,13 +488,15 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 **而 generator 自审对这个核心缺陷系统性失明**：三张分别跑了 4 / 3 / 1 轮自审，全部自评"发表级 / closes cleanly"，**全部漏掉了最核心的那个缺陷**。**自审轮数多少都救不了——失明是结构性的**（generator 看不见"我想画的"↔"实际渲染的"差距）。**每一次，只有独立对抗式多镜头审查抓到了核心缺陷。**
 
-**所以 mode C 的 ④.5 不允许只靠 generator 自审**。Step 0 + 18 项照走，但**完成后必须再过这道 gate**：由 orchestrator **独立 spawn 4 个全新审查 agent**（各自空白上下文），各 Read 渲染出的 PNG，**对抗式**找问题（默认"图里有 bug，去找"），各自返回 blocker（含 severity + 位置 + **具体视觉证据**，证明它真看了图）：
+**2026-07-22 端到端实测把 gate 扩到 mode A 默认路径**：skeleton 复用图（纵向联邦学习 × skeleton-F）checker 全绿、生成方 ④.5 自审通过，独立 gate 仍抓出 3 个 HIGH 语义缺陷（skeleton 拓扑绑架语义：子框无内部箭头 + 错误 1-1 分发、公式下标矛盾、迭代无闭环）+ 编造数值，复审又追出更深一层的协议自毁缺陷。**mode A 的语义缺陷率不比 mode C 低，只是崩的轴不同：mode C 崩在"图里最新的结构"，mode A 崩在"skeleton 拓扑与需求语义的错配处"。**同场 mode C 图（Transformer+MoE）四镜头抓出 5 HIGH（门控约定矛盾 0.61+0.24≠1、fit 面板 9.4pt 叠切——均为 checker 结构盲区且 generator 自查恰好自证盲区：它验过"分布合计=1.00"仍没看出约定冲突）。且**两图的修复轮都引入了新伤**（全角括号致标题溢出、角标内移压线），全靠"改完再跑一轮 gate"抓回——复审不是建议，是必须。
+
+**所以 mode A 与 mode C 的 ④.5 都不允许只靠 generator 自审**。Step 0 + 18 项照走，但**完成后必须再过这道 gate**：由 orchestrator **独立 spawn 4 个全新审查 agent**（各自空白上下文），各 Read 渲染出的 PNG，**对抗式**找问题（默认"图里有 bug，去找"），各自返回 blocker（含 severity + 位置 + **具体视觉证据**，证明它真看了图）：
 
 > 🔴 **"独立"严格指：另起的全新 agent / 空白上下文——不是 generator 自己在同一上下文里"审 4 遍"。** 同上下文自审与 generator 共享同一套盲区，等于没审。**实测（fig4 复杂图）：generator 按本 gate 跑、却跑成"同模型 self-pass 4 遍"，照样漏掉 Sankey 断裂+失比例的重崩；是独立 spawn 的 agent 才抓到。self-pass ≠ gate。**
 >
 > ⚙️ **谁来跑这道 gate**：是**顶层 orchestrator（带 Agent/workflow 工具的主循环）**的职责，**不是 generator 的**。generator / implementer 子 agent 通常 **spawn 不出独立子 agent**（环境常只暴露重量级 team 工具、无轻量 spawner），把 gate 交给它只会退化成 self-pass（实测 fig4 + fig5 两次都如此）。正确流程：generator 做完自己的 ④.5 自审并交付 → **控制权回到 orchestrator → 由 orchestrator 独立 spawn 4 个审查 agent 跑 gate**。
 
-| 镜头 | 专盯 | mode C 高发崩点 |
+| 镜头 | 专盯 | 高发崩点（mode C=新结构 / mode A=拓扑错配+stale-semantics） |
 |---|---|---|
 | **geometry** | 新布局几何是否真画对（同心是否真同心、环是否闭合、Sankey band 宽是否 ∝ 量、节点是否被填充非空心、穿框/裁切/大空白） | **最高发——新结构的几何** |
 | **semantic** | 信息流 / 顺序 / 方向是否对；**独立重算图里所有数字/公式**，查跨面板一致性 | 现编数据自相矛盾 |
@@ -505,7 +513,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 **🔴 gate 通过的硬性举证（杜绝静默 self-pass）**：声称本 gate 通过前，orchestrator 必须在回复里**列出 4 个真实 spawn 出的审查 agent 的 ID/标签**，并**各引一句它返回的具体视觉证据**（如"geometry：同心三环圆心实测偏移 ~0.4cm"）。**给不出 4 个独立 agent 的 ID + 各自证据 = gate 视为未通过**，不得当作通过交付。
 
-**🔴 spawn 不出独立 agent 时：停，不要自审蒙混**。若当前环境无法真正另起 4 个空白上下文 agent（只有重量级 team 工具 / 无轻量 spawner），**禁止**降级成"同上下文自审 4 遍"假装过 gate。正确做法：把图连同一行明确声明 **"⚠️ mode C 独立多镜头 gate 未能运行（环境无独立 spawner），以下结果未经对抗审查"** 一起交给用户，请用户人工充当对抗审查、或换到可 spawn 的环境再跑。**"gate 未运行"是交付阻断项（blocker），不是可跳过的软步骤**——宁可显式声明没跑，也不要让用户误以为已过 gate。
+**🔴 spawn 不出独立 agent 时：停，不要自审蒙混**。若当前环境无法真正另起 4 个空白上下文 agent（只有重量级 team 工具 / 无轻量 spawner），**禁止**降级成"同上下文自审 4 遍"假装过 gate。正确做法：把图连同一行明确声明 **"⚠️ 独立多镜头 gate 未能运行（环境无独立 spawner），以下结果未经对抗审查"** 一起交给用户，请用户人工充当对抗审查、或换到可 spawn 的环境再跑。**"gate 未运行"是交付阻断项（blocker），不是可跳过的软步骤**——宁可显式声明没跑，也不要让用户误以为已过 gate。
 
 ### ⑤ 用户终审 + 交付
 1. **把 PNG 给用户看**（不是询问"我做完了吗"，是直接展示结果）
