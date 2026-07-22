@@ -1,28 +1,14 @@
 % =====================================================================
-% Complete Figure Example: Skeleton B — 5-stage horizontal pipeline
+% Skeleton B — by-CONSTRUCTION rewrite (positioning + chains + fit)
 % =====================================================================
-% USAGE: Complete, COMPILABLE template for sub-agent to copy + customize.
-% Strategy: BY-CONSTRUCTION — the 5 stages are chained with right=of (a
-% single node distance), inter-stage arrows ride node anchors, and content
-% labels wrap via text width. Change content, lengthen a label, or widen
-% the hero and the rest REFLOWS automatically — no coordinate bookkeeping.
-% (The old absolute-coordinate version lives in git history.)
-%
-% LAYOUT GRID (original design intent — now DERIVED by construction, not
-% hand-typed; do not re-introduce absolute \node at (x,y)):
-%   Stage 1: x=[0.0,  4.5],  y=[2,8]   Teal
-%   Stage 2: x=[5.0,  9.5],  y=[2,8]   Blue
-%   Stage 3: x=[10.0, 14.5], y=[2,8]   Purple (HERO)
-%   Stage 4: x=[15.0, 19.5], y=[2,8]   Orange
-%   Stage 5: x=[20.0, 24.5], y=[2,8]   Green
-%   Bottom Summary Bar: y=[0.5, 1.2]
-%   Bottom Color Legend: y=[-0.5, 0]
-%
-% Each stage uses SAME height = 6cm + same internal padding.
-% Each stage = title strip (top 0.5cm) + content area (5.5cm).
-%
-% Sub-agent customization: change titles + labels + colors + numbers;
-% the by-construction layout reflows. Do not hand-place absolute coords.
+% Difference vs absolute-coordinate original:
+%   * stage PITCH lives in ONE place: \stagegap (node distance)
+%   * stages placed `right=of` previous -> reflow automatically
+%   * inter-stage arrows reference NODE ANCHORS, never re-typed coords
+%   * summary-bar cells placed `below=of` their stage -> track the stage
+%   * internal labels use `text width` (wrap) -> never overflow the zone
+%   * title centered via calc midpoint of the whole row
+% Widen the hero / lengthen a label / add a stage -> nothing else to edit.
 % =====================================================================
 
 \documentclass[tikz,border=15pt]{standalone}

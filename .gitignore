@@ -11,3 +11,5 @@ __pycache__/
 test-output/
 .claude/
 thesis-figure-test/
+*.lint.png
+*.overlap.json

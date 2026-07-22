@@ -1,0 +1,20 @@
+{
+  "title": "Branch then reconverge (residual-style)",
+  "layout": { "engine": "dot", "rankdir": "LR", "nodesep": 0.6, "ranksep": 1.1 },
+  "colors": "academic",
+  "nodes": [
+    { "id": "stem",  "label": "Stem",     "color": "blue",   "size": "normal", "shape": "rect" },
+    { "id": "br1",   "label": "Conv 3x3", "color": "green",  "size": "normal", "shape": "rect" },
+    { "id": "br2",   "label": "Conv 1x1", "color": "orange", "size": "normal", "shape": "rect" },
+    { "id": "add",   "label": "$+$",      "color": "purple", "size": "small",  "shape": "circle" },
+    { "id": "head",  "label": "Head",     "color": "grey",   "size": "normal", "shape": "rect" }
+  ],
+  "edges": [
+    { "from": "stem", "to": "br1", "style": "main" },
+    { "from": "stem", "to": "br2", "style": "main" },
+    { "from": "br1",  "to": "add", "style": "main" },
+    { "from": "br2",  "to": "add", "style": "main" },
+    { "from": "stem", "to": "add", "style": "feedback", "label": "skip" },
+    { "from": "add",  "to": "head", "style": "main" }
+  ]
+}

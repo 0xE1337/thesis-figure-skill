@@ -1,0 +1,11 @@
+# 回归 harness 的 Python 依赖。钉死版本，因为 baseline 里冻结了几何检测的精确计数，
+# 而不同版本的栅格化 / 布局会让计数漂移、使 baseline 跨机器失效。
+# 升级任一依赖后，请重新人工确认输出正确，再 `python3 runner.py --update-baselines`。
+pdfplumber==0.11.9
+PyMuPDF==1.27.2.2
+pathfinding==1.0.20
+
+# 另需系统级工具（非 pip，本机已验证版本）：
+#   graphviz `dot` 14.1.5      —— dot-to-tikz.py 的自动布局；跨大版本布局会变，baseline 需重建
+#   XeTeX (TeX Live 2024)      —— xelatex 编译，含 ctex（CJK）字体
+# 生成基线/验证环境：Python 3.14.5, macOS (darwin)

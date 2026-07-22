@@ -4,6 +4,17 @@
 % USAGE: Adapted from a GOLD STANDARD figure (Federated Traffic Prediction).
 % Sub-agent: copy ENTIRE file as figure.tex, change content.
 %
+% ⚙ LAYOUT = BY-CONSTRUCTION (positioning + fit + node anchors): the 3
+%   city ST-GNN zones are the spine (city pitch = one macro), the server
+%   sits at a calc midpoint above them, prep boxes are below=of their city,
+%   sensors offset from prep, upload/download arrows ride node anchors.
+%   Change content / add a city and the rest REFLOWS — no coordinate math.
+%   ⚠ The "zone bottom y=8.6 / 4.6 / chart y=0.4–4.6" numbers below are
+%   ORIGINAL design intent — zone bounds and chip clearance are now
+%   maintained BY CONSTRUCTION (chips anchored above each zone .north;
+%   chart panel via fit). SEMANTIC constraints (renaming, small_blue ≤5-CJK
+%   text limit, recompute-bar-heights-with-labels) STILL HOLD.
+%
 % LAYOUT MODEL:
 %   ┌────────────────────────────────────────────────┐  ┌───┐
 %   │   Top Layer: Central Hero (aggregator/server)  │  │ R │
@@ -80,6 +91,9 @@
 \pgfdeclarelayer{background}
 \pgfsetlayers{background,main}
 
+% ---- single source of truth for layout rhythm ----
+\def\citegap{1.6cm}   % horizontal gap BETWEEN the 4.4cm city zones (=> 6cm pitch)
+
 \begin{document}
 \begin{tikzpicture}[
     every node/.style={font=\small},
@@ -100,156 +114,158 @@
     arrow/.style={-{Stealth[scale=0.9]}, thick, color=black!70,
         shorten >=2pt, shorten <=1pt},
     thin_arrow/.style={-{Stealth[scale=0.7]}, thick, color=drawGreyLine},
+    zone label/.style={font=\footnotesize\bfseries, rounded corners=3pt,
+        inner sep=4pt, anchor=south west},
 ]
 
 % ================================================================
-%  LAYER 3 — FEDERATED AGGREGATION (top)
+%  LAYER 2 — LOCAL TRAINING (middle) — the spine of the layout.
+%  Place the 3 city zones first; everything else hangs off them.
+%  City A anchored; B, C chained `right=of` previous (pitch = \citegap).
 % ================================================================
-\node[red_node, minimum width=7.5cm, minimum height=2.4cm] (server) at (6, 16.5)
+\node[green_node, minimum width=4.4cm, minimum height=3.2cm] (localA) at (0, 10.5) {};
+\node[green_node, minimum width=4.4cm, minimum height=3.2cm,
+      right=\citegap of localA] (localB) {};
+\node[green_node, minimum width=4.4cm, minimum height=3.2cm,
+      right=\citegap of localB] (localC) {};
+
+% City internal blocks — each anchored to its own city node so it travels
+% with the column.  Titles near the top, spat/temp pair mid, caption low.
+\node[font=\small\bfseries, text=drawGreenLine!80!black]
+    at ($(localA.north)+(0,-1.1)$) {城市A\,$\cdot$\,ST-GNN};
+\node[small_blue] (spatA) at ($(localA.center)+(-0.8,-0.3)$) {空间注意力};
+\node[small_blue] (tempA) at ($(localA.center)+(0.8,-0.3)$) {时间卷积};
+\draw[thin_arrow] (spatA.east) -- (tempA.west);
+\node[font=\scriptsize, text=drawGreyLine, align=center]
+    at ($(localA.south)+(0,0.7)$) {路网拓扑\,$\to$\,周期模式};
+
+\node[font=\small\bfseries, text=drawGreenLine!80!black]
+    at ($(localB.north)+(0,-1.1)$) {城市B\,$\cdot$\,ST-GNN};
+\node[small_blue] (spatB) at ($(localB.center)+(-0.8,-0.3)$) {空间注意力};
+\node[small_blue] (tempB) at ($(localB.center)+(0.8,-0.3)$) {时间卷积};
+\draw[thin_arrow] (spatB.east) -- (tempB.west);
+\node[font=\scriptsize, text=drawGreyLine, align=center]
+    at ($(localB.south)+(0,0.7)$) {路网拓扑\,$\to$\,周期模式};
+
+\node[font=\small\bfseries, text=drawGreenLine!80!black]
+    at ($(localC.north)+(0,-1.1)$) {城市C\,$\cdot$\,ST-GNN};
+\node[small_blue] (spatC) at ($(localC.center)+(-0.8,-0.3)$) {空间注意力};
+\node[small_blue] (tempC) at ($(localC.center)+(0.8,-0.3)$) {时间卷积};
+\draw[thin_arrow] (spatC.east) -- (tempC.west);
+\node[font=\scriptsize, text=drawGreyLine, align=center]
+    at ($(localC.south)+(0,0.7)$) {路网拓扑\,$\to$\,周期模式};
+
+% ================================================================
+%  LAYER 3 — FEDERATED AGGREGATION (top)
+%  Server centered over the city row via calc midpoint, fixed height above.
+% ================================================================
+\coordinate (cityrowtop) at ($(localA.north)!0.5!(localC.north)$);
+\node[red_node, minimum width=7.5cm, minimum height=2.4cm] (server)
+    at ($(cityrowtop)+(0,4.4)$)
     {\textbf{中心服务器}\\[2pt]{\footnotesize 加权 FedAvg 聚合}\\[-1pt]{\footnotesize 生成并下发全局模型}};
 
 % ================================================================
-%  LAYER 2 — LOCAL TRAINING (middle)
-% ================================================================
-% --- City A ---
-\node[green_node, minimum width=4.4cm, minimum height=3.2cm] (localA) at (0, 10.5) {};
-\node[font=\small\bfseries, text=drawGreenLine!80!black] at (0, 11.6) {城市A\,$\cdot$\,ST-GNN};
-\node[small_blue] (spatA) at (-0.8, 10.2) {空间注意力};
-\node[small_blue] (tempA) at (0.8, 10.2) {时间卷积};
-\draw[thin_arrow] (spatA.east) -- (tempA.west);
-\node[font=\scriptsize, text=drawGreyLine, align=center] at (0, 9.3)
-    {路网拓扑\,$\to$\,周期模式};
-
-% --- City B ---
-\node[green_node, minimum width=4.4cm, minimum height=3.2cm] (localB) at (6, 10.5) {};
-\node[font=\small\bfseries, text=drawGreenLine!80!black] at (6, 11.6) {城市B\,$\cdot$\,ST-GNN};
-\node[small_blue] (spatB) at (5.2, 10.2) {空间注意力};
-\node[small_blue] (tempB) at (6.8, 10.2) {时间卷积};
-\draw[thin_arrow] (spatB.east) -- (tempB.west);
-\node[font=\scriptsize, text=drawGreyLine, align=center] at (6, 9.3)
-    {路网拓扑\,$\to$\,周期模式};
-
-% --- City C ---
-\node[green_node, minimum width=4.4cm, minimum height=3.2cm] (localC) at (12, 10.5) {};
-\node[font=\small\bfseries, text=drawGreenLine!80!black] at (12, 11.6) {城市C\,$\cdot$\,ST-GNN};
-\node[small_blue] (spatC) at (11.2, 10.2) {空间注意力};
-\node[small_blue] (tempC) at (12.8, 10.2) {时间卷积};
-\draw[thin_arrow] (spatC.east) -- (tempC.west);
-\node[font=\scriptsize, text=drawGreyLine, align=center] at (12, 9.3)
-    {路网拓扑\,$\to$\,周期模式};
-
-% ================================================================
 %  LAYER 1 — EDGE COLLECTION (bottom)
+%  Preprocessing box below each city; sensors below each prep box.
 % ================================================================
-% Preprocessing
-\node[grey_node, minimum width=3.2cm] (prepA) at (0, 7.0)
+\node[grey_node, minimum width=3.2cm, below=1.45cm of localA] (prepA)
     {\footnotesize 本地预处理};
-\node[grey_node, minimum width=3.2cm] (prepB) at (6, 7.0)
+\node[grey_node, minimum width=3.2cm, below=1.45cm of localB] (prepB)
     {\footnotesize 本地预处理};
-\node[grey_node, minimum width=3.2cm] (prepC) at (12, 7.0)
+\node[grey_node, minimum width=3.2cm, below=1.45cm of localC] (prepC)
     {\footnotesize 本地预处理};
 
-% Sensors — City A
-\node[sensor] (camA) at (-1.5, 5.1) {摄像头};
-\node[sensor] (magA) at (0, 5.1) {地磁};
-\node[sensor] (gpsA) at (1.5, 5.1) {GPS};
-% Sensors — City B
-\node[sensor] (camB) at (4.5, 5.1) {摄像头};
-\node[sensor] (magB) at (6, 5.1) {地磁};
-\node[sensor] (gpsB) at (7.5, 5.1) {GPS};
-% Sensors — City C
-\node[sensor] (camC) at (10.5, 5.1) {摄像头};
-\node[sensor] (magC) at (12, 5.1) {地磁};
-\node[sensor] (gpsC) at (13.5, 5.1) {GPS};
+% Sensors — 3 per city, fanned under each prep box (offset -1.5/0/+1.5)
+\node[sensor] (camA) at ($(prepA.south)+(-1.5,-1.45)$) {摄像头};
+\node[sensor] (magA) at ($(prepA.south)+(0,-1.45)$) {地磁};
+\node[sensor] (gpsA) at ($(prepA.south)+(1.5,-1.45)$) {GPS};
+\node[sensor] (camB) at ($(prepB.south)+(-1.5,-1.45)$) {摄像头};
+\node[sensor] (magB) at ($(prepB.south)+(0,-1.45)$) {地磁};
+\node[sensor] (gpsB) at ($(prepB.south)+(1.5,-1.45)$) {GPS};
+\node[sensor] (camC) at ($(prepC.south)+(-1.5,-1.45)$) {摄像头};
+\node[sensor] (magC) at ($(prepC.south)+(0,-1.45)$) {地磁};
+\node[sensor] (gpsC) at ($(prepC.south)+(1.5,-1.45)$) {GPS};
 
 % ================================================================
 %  EXPERIMENT RESULTS PANEL (bottom)
+%  Panel centered under the city row; all internals kept verbatim inside
+%  a scope shifted to the panel's lower-left so the embedded chart and
+%  legend travel with the panel.
 % ================================================================
-% Panel resized: height 3.8 → 4.2 (center stays 1.7) so the panel spans
-% y=-0.4..3.8 (was -0.2..3.6). Previous panel top y=3.6 was EXACTLY at
-% the y-axis arrow tip (scope y=3.4 + shift y=0.20 = abs y=3.6) — the
-% arrowhead touched the panel border. New panel top y=3.8 gives 0.2cm
-% clearance. Title moved from y=3.7 → 3.9 to stay ABOVE the new panel
-% top (3.8).
 \node[rectangle, rounded corners=6pt, draw=drawBlueLine, fill=drawBlueFill!15,
-    minimum width=15cm, minimum height=4.2cm, thick, inner sep=0pt] (panel) at (6, 1.7) {};
+    minimum width=15cm, minimum height=4.2cm, thick, inner sep=0pt] (panel)
+    at ($(cityrowtop |- 0,1.7)$) {};
+
+% Title + key-insight chip anchored to the panel's TOP edge so they stay
+% aligned with it (above the panel, anchor=south).
 \node[font=\small\bfseries, text=drawBlueLine!80!black, anchor=south west]
-    at (-0.8, 3.9) {实验结果：三城市联合预测性能};
-
-% Embedded bar chart
-% Fix G.6: was y-axis labeled 5/10/15/20 (max 20) but bar value labels
-% said 22.1/25.3 — bar heights and axis scale didn't match (visual lie).
-% Now: extend axis to label "30", scale = 0.1 cm per 1 unit of value,
-% bar heights = 0.2 + 0.1 * value (correct linear mapping).
-\begin{scope}[shift={(1.5, 0.20)}]
-  % Axes — extended to y=3.2 (label 30)
-  \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.5, 0.2) -- (0.5, 3.4);
-  \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.5, 0.2) -- (5.5, 0.2);
-  % Grid lines + Y-axis ticks at 5/10/15/20/25/30
-  \foreach \y/\lab in {0.7/5, 1.2/10, 1.7/15, 2.2/20, 2.7/25, 3.2/30} {
-    \draw[gray!20, thin] (0.5, \y) -- (5.2, \y);
-    \node[font=\scriptsize, left, text=drawGreyLine] at (0.4, \y) {\lab};
-  }
-
-  % MAE group — bar heights NOW match axis (22.1→y=2.41, 18.1→y=2.01)
-  \fill[drawGreyFill, draw=drawGreyLine] (1.0, 0.2) rectangle (1.6, 2.41);
-  \fill[barBlue, draw=barBlue!80!black, rounded corners=1pt] (1.8, 0.2) rectangle (2.4, 2.01);
-  \node[font=\scriptsize, text=drawGreyLine] at (1.3, 2.56) {22.1};
-  \node[font=\scriptsize, text=barBlue!80!black] at (2.1, 2.16) {18.1};
-  \node[font=\scriptsize] at (1.7, -0.05) {MAE};
-
-  % RMSE group — 25.3→y=2.73, 19.8→y=2.18
-  \fill[drawGreyFill, draw=drawGreyLine] (3.0, 0.2) rectangle (3.6, 2.73);
-  \fill[barBlue, draw=barBlue!80!black, rounded corners=1pt] (3.8, 0.2) rectangle (4.4, 2.18);
-  \node[font=\scriptsize, text=drawGreyLine] at (3.3, 2.88) {25.3};
-  \node[font=\scriptsize, text=barBlue!80!black] at (4.1, 2.33) {19.8};
-  \node[font=\scriptsize] at (3.7, -0.05) {RMSE};
-
-  % Improvement arrows + labels — to the RIGHT of each pair
-  \draw[-{Stealth[scale=0.5]}, very thick, drawRedLine] (2.55, 2.41) -- (2.55, 2.01);
-  \node[font=\scriptsize\bfseries, text=drawRedLine, anchor=west]
-      at (2.6, 2.21) {$\downarrow$18.3\%};
-  \draw[-{Stealth[scale=0.5]}, very thick, drawRedLine] (4.55, 2.73) -- (4.55, 2.18);
-  \node[font=\scriptsize\bfseries, text=drawRedLine, anchor=west]
-      at (4.6, 2.46) {$\downarrow$21.7\%};
-\end{scope}
-
-% Legend (right side of panel)
-\begin{scope}[shift={(8.5, 1.5)}]
-  \fill[drawGreyFill, draw=drawGreyLine] (0, 0.7) rectangle (0.4, 0.9);
-  \node[font=\scriptsize, anchor=west] at (0.5, 0.8) {基线方法};
-  \fill[barBlue, draw=barBlue!80!black] (0, 0.25) rectangle (0.4, 0.45);
-  \node[font=\scriptsize, anchor=west] at (0.5, 0.35) {FedTraffic};
-\end{scope}
-
-% Key insight — Fix G.5: was green-on-green chip inside blue panel
-% (color conflict + visually a "data point" inside the chart area).
-% Move OUTSIDE the panel (above it, anchor=south) and harmonize color
-% with the panel's blue theme so it reads as a summary annotation.
-% Moved 3.7 → 3.9 to stay above the resized panel top (now y=3.8) — same
-% as the title repositioning.
+    at ($(panel.north west)+(0.0,0.1)$) {实验结果：三城市联合预测性能};
 \node[font=\footnotesize\bfseries, text=drawBlueLine!80!black,
       fill=drawBlueFill!40, draw=drawBlueLine!50, rounded corners=3pt,
-      inner sep=5pt, anchor=south west] at (9.0, 3.9)
+      inner sep=5pt, anchor=south east] at ($(panel.north east)+(-0.2,0.1)$)
     {数据不出域，隐私安全};
 
+% Embedded bar chart + legend — original LOCAL coordinates preserved,
+% just re-anchored: the original used absolute origin near panel SW corner
+% (panel center (6,1.7) => SW corner (-1.5,-0.4)). Shift the scope to the
+% panel SW corner and keep the exact internal drawing.
+\begin{scope}[shift={($(panel.south west)+(1.5,0.0)$)}]
+  % --- bar chart (was shift={(1.5,0.20)} relative to abs origin; here the
+  %     scope already sits at panel SW + (1.5,0), so use +0.20 in y) ---
+  \begin{scope}[shift={(0, 0.20)}]
+    % Axes — extended to y=3.2 (label 30)
+    \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.5, 0.2) -- (0.5, 3.4);
+    \draw[-{Stealth[scale=0.6]}, thick, drawGreyLine] (0.5, 0.2) -- (5.5, 0.2);
+    % Grid lines + Y-axis ticks at 5/10/15/20/25/30
+    \foreach \y/\lab in {0.7/5, 1.2/10, 1.7/15, 2.2/20, 2.7/25, 3.2/30} {
+      \draw[gray!20, thin] (0.5, \y) -- (5.2, \y);
+      \node[font=\scriptsize, left, text=drawGreyLine] at (0.4, \y) {\lab};
+    }
+    % MAE group — bar heights match axis (22.1->y=2.41, 18.1->y=2.01)
+    \fill[drawGreyFill, draw=drawGreyLine] (1.0, 0.2) rectangle (1.6, 2.41);
+    \fill[barBlue, draw=barBlue!80!black, rounded corners=1pt] (1.8, 0.2) rectangle (2.4, 2.01);
+    \node[font=\scriptsize, text=drawGreyLine] at (1.3, 2.56) {22.1};
+    \node[font=\scriptsize, text=barBlue!80!black] at (2.1, 2.16) {18.1};
+    \node[font=\scriptsize] at (1.7, -0.05) {MAE};
+    % RMSE group — 25.3->y=2.73, 19.8->y=2.18
+    \fill[drawGreyFill, draw=drawGreyLine] (3.0, 0.2) rectangle (3.6, 2.73);
+    \fill[barBlue, draw=barBlue!80!black, rounded corners=1pt] (3.8, 0.2) rectangle (4.4, 2.18);
+    \node[font=\scriptsize, text=drawGreyLine] at (3.3, 2.88) {25.3};
+    \node[font=\scriptsize, text=barBlue!80!black] at (4.1, 2.33) {19.8};
+    \node[font=\scriptsize] at (3.7, -0.05) {RMSE};
+    % Improvement arrows + labels — to the RIGHT of each pair
+    \draw[-{Stealth[scale=0.5]}, very thick, drawRedLine] (2.55, 2.41) -- (2.55, 2.01);
+    \node[font=\scriptsize\bfseries, text=drawRedLine, anchor=west]
+        at (2.6, 2.21) {$\downarrow$18.3\%};
+    \draw[-{Stealth[scale=0.5]}, very thick, drawRedLine] (4.55, 2.73) -- (4.55, 2.18);
+    \node[font=\scriptsize\bfseries, text=drawRedLine, anchor=west]
+        at (4.6, 2.46) {$\downarrow$21.7\%};
+  \end{scope}
+  % --- legend (was shift={(8.5,1.5)} relative to abs origin; here scope is
+  %     at panel SW + (1.5,0) so legend origin = (7.0, 1.5)) ---
+  \begin{scope}[shift={(7.0, 1.5)}]
+    \fill[drawGreyFill, draw=drawGreyLine] (0, 0.7) rectangle (0.4, 0.9);
+    \node[font=\scriptsize, anchor=west] at (0.5, 0.8) {基线方法};
+    \fill[barBlue, draw=barBlue!80!black] (0, 0.25) rectangle (0.4, 0.45);
+    \node[font=\scriptsize, anchor=west] at (0.5, 0.35) {FedTraffic};
+  \end{scope}
+\end{scope}
+
 % ================================================================
-%  CONNECTIONS — Sensors → Preprocessing
+%  CONNECTIONS — Sensors -> Preprocessing (fan-in, NODE ANCHORS)
 % ================================================================
 \draw[arrow] (camA.north) -- ([xshift=-10pt]prepA.south);
 \draw[arrow] (magA.north) -- (prepA.south);
 \draw[arrow] (gpsA.north) -- ([xshift=10pt]prepA.south);
-
 \draw[arrow] (camB.north) -- ([xshift=-10pt]prepB.south);
 \draw[arrow] (magB.north) -- (prepB.south);
 \draw[arrow] (gpsB.north) -- ([xshift=10pt]prepB.south);
-
 \draw[arrow] (camC.north) -- ([xshift=-10pt]prepC.south);
 \draw[arrow] (magC.north) -- (prepC.south);
 \draw[arrow] (gpsC.north) -- ([xshift=10pt]prepC.south);
 
 % ================================================================
-%  CONNECTIONS — Preprocessing → Local Models
+%  CONNECTIONS — Preprocessing -> Local Models (NODE ANCHORS)
 % ================================================================
 \draw[arrow] (prepA.north) -- (localA.south);
 \draw[arrow] (prepB.north) -- (localB.south);
@@ -257,87 +273,90 @@
 
 % ================================================================
 %  UPLOAD GRADIENTS (orange thick, L-shaped convergence)
+%  Same L-shape as original; corners land on the server's SOUTH edge
+%  (node anchor + xshift) instead of re-typed (4.0,15.3)/(8.0,15.3).
 % ================================================================
-% A → server: up, right, up
+% A -> server: up, right, up  (target = server.south shifted left 2.0cm)
 \draw[-{Stealth[scale=1.1]}, very thick, color=drawOrangeLine, rounded corners=6pt]
-    ([xshift=-10pt]localA.north) -- ++(0, 1.5) -| (4.0, 15.3);
-% B → server: straight up
+    ([xshift=-10pt]localA.north) -- ++(0, 1.5) -| ([xshift=-57pt]server.south);
+% B -> server: straight up
 \draw[-{Stealth[scale=1.1]}, very thick, color=drawOrangeLine]
     ([xshift=-10pt]localB.north) -- ([xshift=-10pt]server.south);
-% C → server: up, left, up
+% C -> server: up, left, up  (target = server.south shifted right 2.0cm)
 \draw[-{Stealth[scale=1.1]}, very thick, color=drawOrangeLine, rounded corners=6pt]
-    ([xshift=-10pt]localC.north) -- ++(0, 1.5) -| (8.0, 15.3);
+    ([xshift=-10pt]localC.north) -- ++(0, 1.5) -| ([xshift=57pt]server.south);
 
 % Upload label
 \node[font=\footnotesize\bfseries, text=drawOrangeLine,
       fill=white, fill opacity=0.9, text opacity=1,
-      inner sep=3pt, rounded corners=2pt] at (1.5, 13.7) {上传梯度};
+      inner sep=3pt, rounded corners=2pt]
+    at ($(localA.north)!0.5!(localB.north)+(0,1.6)$) {上传梯度};
 
 % ================================================================
 %  DOWNLOAD MODEL (blue dashed, L-shaped divergence)
 % ================================================================
-% server → A: down, left, down
+% server -> A: down, left, down  (start = server.south shifted left 1.5cm)
 \draw[-{Stealth[scale=0.9]}, thick, dashed, color=drawBlueLine, rounded corners=6pt]
-    (4.5, 15.3) -- ++(0, -1.3) -| ([xshift=10pt]localA.north);
-% server → B: straight down
+    ([xshift=-43pt]server.south) -- ++(0, -1.3) -| ([xshift=10pt]localA.north);
+% server -> B: straight down
 \draw[-{Stealth[scale=0.9]}, thick, dashed, color=drawBlueLine]
     ([xshift=10pt]server.south) -- ([xshift=10pt]localB.north);
-% server → C: down, right, down
+% server -> C: down, right, down  (start = server.south shifted right 1.5cm)
 \draw[-{Stealth[scale=0.9]}, thick, dashed, color=drawBlueLine, rounded corners=6pt]
-    (7.5, 15.3) -- ++(0, -1.3) -| ([xshift=10pt]localC.north);
+    ([xshift=43pt]server.south) -- ++(0, -1.3) -| ([xshift=10pt]localC.north);
 
 % Download label
 \node[font=\footnotesize\bfseries, text=drawBlueLine,
       fill=white, fill opacity=0.9, text opacity=1,
-      inner sep=3pt, rounded corners=2pt] at (10.5, 13.7) {下发全局模型};
+      inner sep=3pt, rounded corners=2pt]
+    at ($(localB.north)!0.5!(localC.north)+(0,1.6)$) {下发全局模型};
 
 % ================================================================
-%  ZONE BACKGROUNDS (pgfonlayer)
+%  ZONE BACKGROUNDS — drawn via `fit` over the real member nodes so the
+%  zone box follows them under reflow.  inner sep tuned to reproduce the
+%  original dashed-rectangle margins.
 % ================================================================
 \begin{pgfonlayer}{background}
-  % Aggregation zone
-  \fill[drawRedFill!20, rounded corners=10pt] (-3.2, 14.7) rectangle (15.2, 18.3);
-  \draw[drawRedLine!50, dashed, thick, rounded corners=10pt] (-3.2, 14.7) rectangle (15.2, 18.3);
-  % Training zone — bottom extended 8.3 → 8.6 so the 边缘采集层 chip
-  % above Edge zone (chip top at y=8.6) doesn't poke into Training zone.
-  \fill[drawGreenFill!20, rounded corners=10pt] (-3.2, 8.6) rectangle (15.2, 12.7);
-  \draw[drawGreenLine!50, dashed, thick, rounded corners=10pt] (-3.2, 8.6) rectangle (15.2, 12.7);
-  % Edge collection zone — bottom raised 4.3 → 4.6 to give the
-  % "实验结果" chart-panel title more vertical breathing room (was 0.3cm
-  % gap from title top y≈4.0 to zone dashed border at 4.3, now 0.6cm).
-  \fill[drawOrangeFill!20, rounded corners=10pt] (-3.2, 4.6) rectangle (15.2, 8.0);
-  \draw[drawOrangeLine!50, dashed, thick, rounded corners=10pt] (-3.2, 4.6) rectangle (15.2, 8.0);
+  % Aggregation zone — wraps the server; wide margin matches the original
+  % full-width band (orig spanned the city-row width, ~1cm beyond cities).
+  \node[fit=(server), inner xsep=155pt, inner ysep=18pt,
+        fill=drawRedFill!20, rounded corners=10pt,
+        draw=drawRedLine!50, dashed, thick] (aggzone) {};
+  % Training zone — wraps all 3 city zones (~1cm horizontal margin).
+  \node[fit=(localA)(localC), inner xsep=28pt, inner ysep=12pt,
+        fill=drawGreenFill!20, rounded corners=10pt,
+        draw=drawGreenLine!50, dashed, thick] (trainzone) {};
+  % Edge collection zone — wraps prep boxes + all sensors (~1cm margin).
+  \node[fit=(prepA)(prepC)(camA)(gpsC), inner xsep=28pt, inner ysep=12pt,
+        fill=drawOrangeFill!20, rounded corners=10pt,
+        draw=drawOrangeLine!50, dashed, thick] (edgezone) {};
 \end{pgfonlayer}
 
 % ================================================================
-%  ZONE LABELS (capsule style — all 3 chips OUTSIDE their zones above)
+%  ZONE LABELS (capsule chips — placed ABOVE each zone via anchors)
 % ================================================================
-% All three chips share the same style: anchor=south west placed JUST
-% ABOVE each zone's top border, with chip bottom touching zone top.
-% Previously 联邦聚合层 was anchor=north west INSIDE its zone at top-left,
-% while 本地训练层 / 边缘采集层 were anchor=south west ABOVE their zones
-% — inconsistent visual treatment. Now uniformly above-zone.
-% (本地训练层/边缘采集层 moved above to avoid overlap with City A / Prep
-% box content; Training zone bottom extended 8.3→8.6 to fit 边缘采集层
-% chip in the inter-zone gap.)
-\node[font=\footnotesize\bfseries, text=drawRedLine!80!black,
-      fill=drawRedFill!60, draw=drawRedLine!40, rounded corners=3pt, inner sep=4pt,
-      anchor=south west] at (-2.7, 18.35) {联邦聚合层};
-\node[font=\footnotesize\bfseries, text=drawGreenLine!80!black,
-      fill=drawGreenFill!60, draw=drawGreenLine!40, rounded corners=3pt, inner sep=4pt,
-      anchor=south west] at (-2.7, 12.75) {本地训练层};
-\node[font=\footnotesize\bfseries, text=drawOrangeLine!80!black,
-      fill=drawOrangeFill!60, draw=drawOrangeLine!40, rounded corners=3pt, inner sep=3pt,
-      anchor=south west] at (-2.7, 8.05) {边缘采集层};
+\node[zone label, text=drawRedLine!80!black,
+      fill=drawRedFill!60, draw=drawRedLine!40]
+    at ($(aggzone.north west)+(0.0,0.05)$) {联邦聚合层};
+\node[zone label, text=drawGreenLine!80!black,
+      fill=drawGreenFill!60, draw=drawGreenLine!40]
+    at ($(trainzone.north west)+(0.0,0.05)$) {本地训练层};
+\node[zone label, text=drawOrangeLine!80!black,
+      fill=drawOrangeFill!60, draw=drawOrangeLine!40, inner sep=3pt]
+    at ($(edgezone.north west)+(0.0,0.05)$) {边缘采集层};
 
 % ================================================================
 %  DECORATIVE — Iteration cycle annotation (right margin)
+%  Anchored to the aggregation/training zones on the right edge.
 % ================================================================
+\coordinate (railtop) at ($(aggzone.east)+(0.1,0)$);
+\coordinate (railbot) at ($(trainzone.east)+(0.1,0)$);
 \draw[-{Stealth[scale=0.8]}, thick, color=drawPurpleLine, rounded corners=4pt]
-    (15.3, 12.5) -- (15.3, 17.5);
+    (railtop) -- (railbot);
 \draw[-{Stealth[scale=0.8]}, thick, dashed, color=drawPurpleLine, rounded corners=4pt]
-    (15.7, 17.5) -- (15.7, 12.5);
-\node[font=\scriptsize, text=drawPurpleLine, anchor=west] at (16.0, 15.0)
+    ($(railbot)+(0.4,0)$) -- ($(railtop)+(0.4,0)$);
+\node[font=\scriptsize, text=drawPurpleLine, anchor=west]
+    at ($(railtop)!0.5!(railbot)+(0.7,0)$)
     {\shortstack{联\\邦\\迭\\代}};
 
 \end{tikzpicture}

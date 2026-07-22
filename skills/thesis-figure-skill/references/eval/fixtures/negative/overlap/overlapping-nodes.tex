@@ -1,0 +1,11 @@
+% 负向 fixture：两个节点几何重叠（不同文字，避免 is_same_text 跳过）。
+% 编译后 pdf-overlap-checker.py 必须报至少一个 ERROR（这里是 node-overlap）。
+% 若它一个 error 都不报，说明几何重叠门被削弱。纯英文 + plain tikz，任意机器可编译。
+\documentclass[border=4pt]{standalone}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}
+  \node[draw, minimum width=2.6cm, minimum height=1cm] at (0,0)     {Alpha};
+  \node[draw, minimum width=2.6cm, minimum height=1cm] at (0.2,0.1) {Bravo};
+\end{tikzpicture}
+\end{document}

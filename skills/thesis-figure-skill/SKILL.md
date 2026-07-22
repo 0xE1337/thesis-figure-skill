@@ -82,7 +82,7 @@ description: |
 
 **Batch 17 fig153 教训**：Philosophy 文本指南让 sub-agent **知道要嵌入 viz / panel / 公式**，但**写出来的视觉重量、留白、配色协调仍然失败**——因为这些是 visual perception 而非 textual 任务。
 
-**解决方案**：`references/tikz-snippets/` 提供 **21 个手工精雕的 TikZ 片段 + 21 个 PNG 预览 + 1 个组合规则文档**——sub-agent **看 PNG 选 + 复制粘贴 + 替换参数 + 按组合规则拼装**即可达到 examples 标杆。
+**解决方案**：`references/tikz-snippets/` 提供 **21 个手工精雕的 TikZ 片段（各带 PNG 预览）+ 6 个 example-skeleton + 1 个组合规则文档**（完整清单见该目录 `README.md`）——sub-agent **看 PNG 选 + 复制粘贴 + 替换参数 + 按组合规则拼装**即可达到 examples 标杆。
 
 **5 大类零件**（详见 `references/tikz-snippets/README.md` inline gallery）：
 
@@ -98,13 +98,17 @@ description: |
 
 **复杂档强制流程**：
 1. **先读 `references/tikz-snippets/README.md`** —— inline gallery 含每个 snippet 的 PNG 预览
-2. **首选**：复制完整 `example-skeleton-B-horizontal.tex`（pipeline 类）或 `example-skeleton-C-centralhero.tex`（hero+panels 类）作 figure.tex，改 content 不动 layout
+2. **首选**：复制完整 `example-skeleton-B-horizontal.tex`（pipeline 类）或 `example-skeleton-C-centralhero.tex`（hero+panels 类）作 figure.tex，改 content 不动 layout（连线拓扑与需求语义不匹配时按「mode A 拓扑逃生舱」改拓扑，见 4 路径一节）
 3. **次选**（特殊布局需求）：看 PNG 选 ≥ 3 snippet 自己拼装
 4. **必读 `COMPOSITION-RULES.md`** —— 解决"snippets 都塞进去但仍乱"问题
 5. **底部必有** color-legend OR summary-bar
 6. **绝对不能"简化"snippet 核心结构** —— 简化 = 信息稀疏 = 平庸
 
 ## 硬约束（违反必失败）
+
+> 🧱 **代码正确性地基 → [tikz-figure-code](../tikz-figure-code/SKILL.md) skill**。本技能管"画什么 + 怎么编排迭代"；
+> "怎么写出编译干净、编辑安全的 TikZ 代码"（5 条按构造 idiom + 8 条硬约束全集 + canonical 箭头 + `lint.sh` 静态检查入口）
+> 沉淀在那个地基技能里。写从零图 / 改排版 bug / CJK 渲染问题时按需加载它。本节是其硬约束的高频子集。
 
 🔴 **工具铁律：只用 TikZ 或 draw.io，禁止 Python/matplotlib 替代**（2026-05-22 Batch 17 fig153 教训：sub-agent 在执行 Module-First 时用 Python+matplotlib 生成 `.py` 文件 = 完全偏离 thesis-figure-skill 价值主张）：
 - **Module-First 子流程（③.A→③.D）必须保持 TikZ**——即使 matplotlib 画嵌入 viz 更方便
@@ -145,14 +149,14 @@ skill 现在支持 **4 种生成路径**——画图前必须先确定走哪条�
 
 | 路径 | 触发关键词（用户原 prompt） | 说明 | 状态 |
 |---|---|---|---|
-| **A — Skeleton 复用** | "画一张 X 图"、"帮我画 Y"、未明示其他 | 从已验证 skeleton (B/C/D/E/F/G) 选一个，**复制全部 + 改 content + 不动 layout**。最快、最稳。输出视觉与 skeleton 相近 | ✅ 默认 |
+| **A — Skeleton 复用** | "画一张 X 图"、"帮我画 Y"、未明示其他 | 从已验证 skeleton (B/C/D/E/F/G) 选一个，**复制全部 + 改 content + 不动 layout 常量**；需求语义与 skeleton 连线拓扑不匹配时走**「mode A 拓扑逃生舱」**（见下）。⚠️ mode A 高发缺陷=语义被 skeleton 拓扑绑架（stale-semantics），④.5 文末 gate 对 A 同样强制 | ✅ 默认 |
 | **B — Remix（跨 skeleton 拼模块）** | "组合 D 的雷达 + G 的图表那种"、"想要 X 的左半 + Y 的右半" | 多选 skeleton 部件，自动拼装 | 🚧 暂未实装，**回退到 A** |
 | **C — 原创设计** | "独特版面"、"复刻这张 ref.png"、"从零设计"、"我没有合适的 skeleton" | 从零设计 layout（Module-First ③.A→③.D）→ **强制独立多镜头审查 gate**（④.5 文末）。⚠️ mode C 最易在"图里最新、无 skeleton 先例的那个结构"上崩，且 generator 自审对此**结构性失明** | ✅ 现有路径 |
 | **D — 沉淀入库** | "把这张 .tex 存进库"、"作为新 skeleton"、"添加到 examples"、"沉淀到模板库" | 用户已有 .tex → 自动入库为 `example-skeleton-{H..Z}-<topic>.tex` | ✅ 走 **Φ 沉淀通道** |
 
-**走 A** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走 A 路：从 6 个 skeleton 选最匹配的 → 复制全部 → 改 content / 不动 layout / 严格遵守 CONSTRAINTS section）
+**走 A** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走 A 路：从 6 个 skeleton 选最匹配的 → 复制全部 → 改 content / 不动 layout 常量 / 严格遵守 CONSTRAINTS section；连线拓扑与需求语义冲突时**必须**走「mode A 拓扑逃生舱」；④.5 **必走「独立多镜头审查 gate」**——与 mode C 同一道，见 ④.5 文末）
 **走 B** → 当前不可用。报告用户"Remix 模式暂未实装，当前请用 A skeleton 复用；如果你想要的部件组合在某个 skeleton 里近似存在，可以直接走 A 选最接近的"
-**走 C** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走从零路 + Module-First ③.A→③.D 子流程；④.5 **必走「mode C 独立多镜头审查 gate」**——见 ④.5 文末，不可只靠 generator 自审）
+**走 C** → 继续 ① ② ③ ④ ④.5 ⑤ ⑥ ⑦（③ 走从零路 + Module-First ③.A→③.D 子流程；④.5 **必走「独立多镜头审查 gate」**——见 ④.5 文末，不可只靠 generator 自审）
 **走 D** → **跳过 ①-⑦**，直接进 **Φ 沉淀通道**（见文末）
 
 **判断规则**（按优先级）：
@@ -161,7 +165,13 @@ skill 现在支持 **4 种生成路径**——画图前必须先确定走哪条�
 3. 用户提到 "独特 / 原创 / 复刻 / from scratch / 无参考图" → **弱 C**（询问确认走 A 还是 C）
 4. 其余 → **A**（不需要询问，直接走 skeleton 路径）
 
-**模式选择对编译验证 / vision-audit 的影响**：A 模式因为 skeleton 已经过版面验证，④.5 重点放在"内容是否完全脱离 skeleton 主题（renaming 漏掉、stale 标签）"上；**C 模式走完整 18 项 checklist + 强制「独立多镜头审查 gate」**（generator 自审在 mode C 实测 3/3 漏掉核心缺陷，必须外部对抗审查兜底）；D 模式走 Φ.2 简化版 audit。
+**模式选择对编译验证 / vision-audit 的影响**：A 模式因为 skeleton 已经过版面验证，④.5 重点放在"内容是否完全脱离 skeleton 主题（renaming 漏掉、stale 标签）+ **连线拓扑是否还在讲 skeleton 原来的故事**（stale-semantics）"上，且**同样必须过「独立多镜头审查 gate」**（2026-07-22 实测：mode A 复用图 checker 全绿、生成方自审通过，独立 gate 仍抓出 3 个 HIGH 语义缺陷——skeleton 复用的语义缺陷率不比 mode C 低）；**C 模式走完整 18 项 checklist + 同一道 gate**（generator 自审在 mode C 实测 3/3 漏掉核心缺陷，必须外部对抗审查兜底）；D 模式走 Φ.2 简化版 audit。
+
+**mode A 拓扑逃生舱（2026-07-22 实测坐实）**：skeleton 的连线拓扑是为它原来的故事设计的——当用户需求的数据流与之不匹配（典型症状：子步骤间缺内部流程箭头、fan-out 目标错位被读成错误分发、闭环/回传通道缺失），**"只改 content 不动拓扑"会让语义被 skeleton 绑架：图看起来对、读起来错**。实测案例（纵向联邦学习 × skeleton-F）：生成方自己把两条语义缺陷列进"遗留问题"，仍因"不改拓扑"规则照常交付，独立 gate 判 REJECT。规则：
+1. ①.0 图契约写完后，**显式核对 skeleton 连线拓扑 vs 需求数据流**，不匹配处逐条列出——不允许"语义松弛处理"后沉默交付。
+2. 需要改拓扑时**允许且必须改**，但只能用 by-construction 方式：新连线走 node anchor（`.east`/`.west`）、fan-out 用 trunk+spine+stub canonical、长回环拆段挂 zone anchor——**禁止手填绝对坐标**（实测：按此方式改拓扑 3 处 + 框加行，几何零新伤，下游元素 anchor 自动回流）。
+3. 改动的拓扑记录进 figure.tex 头部契约注释（改了什么、为什么），供 ④.5 与 gate 审查。
+4. **已知语义遗留 = blocker，不是"遗留问题"**——生成方列得出来的语义缺陷必须修掉或升级给用户拍板，不允许自知有缺陷仍按"规则不让改"交付。
 
 ### ① 画图指令（强制显式输出，不可跳过）
 
@@ -169,11 +179,31 @@ skill 现在支持 **4 种生成路径**——画图前必须先确定走哪条�
 
 **关键认识**：步骤① 的输出不是"最大复杂度版本"。先判断论文实际复杂度（极简/中等/复杂/超复杂），再选画图档位。**从复杂版起步然后修瑕疵**比**从合适档位起步**累计 token 高一个数量级——MMAlign 11 轮迭代就是反面教材。
 
+#### ①.0 图契约（动笔/选 form 前先写，≤6 行；极简档可一句话带过）
+
+**conclusion-first：先确定"这张图要证明什么"，再选最小结构——而不是先挑模板再填内容。** 写进 figure.tex 头部注释块**最顶部**：
+
+```
+核心结论：<一句话，必须带动词。如"X 通过 Z 把 Y 降低"——不是"X 的结果"/"系统架构">
+图原型：<对应 skeleton/mode：横向流水线=B / 中心 hero=C / 纵向侧栏=D / 多模态融合=E / 多阶段多子图=F / 联邦纵向=G / 纯几何·对比=无 skeleton>
+证据层级：hero（最该被 5 秒记住的那块）=<…>；支撑=<…，视觉上更安静，不抢 hero>
+能不能更少？：<去掉哪个框/panel 后仍能证明核心结论？能去就去——每个元素必须挣到位置>
+```
+
+**为什么加这一步**（借鉴 nature-figure 的 figure-contract，砍掉其 Python/SVG/统计字段）：
+- **核心结论** = ④.5 Step 0「审稿人 5 秒记住什么」的标准答案，提前钉死，避免画完才发现没重点。
+- **图原型直接决定档位与 skeleton —— 判档看原型，不是数节点**（消解下面的"节点数悖论"：原型一旦定了，form 和档位随之确定）。
+- **「能不能更少」是反 AI-slop 的硬约束**：把 Philosophy 的"每个元素earn its place"变成动笔前的一次显式删减，而不是 ④.5 事后做无用功。
+
+**极简档**：核心结论写一句、图原型选「纯几何·对比」即可，证据层级/能不能更少可略。
+
 **🔴 强制物质化要求**（fig126 Tacotron2 教训：sub-agent 加载 step1 但跳过实际输出，产生大块空白）：
 
 步骤 ① 必须**以文字形式实际输出**（不是"想了就过"），且**第一段写进 figure.tex 头部注释块**作为证据。**形式两选一**，按图复杂度选：
 
 **🔵 form A/B 选择前的先决条件**（消除"节点数悖论"——判档依赖草图、草图依赖判档的循环）：
+
+**首选信号 = ①.0 的图原型**（原型一旦定下，form 与档位随之确定，不必先数节点）：C/E/F/G 原型 → 复杂档 → form B；B 原型 → 中等或复杂档 → form A 或 B；纯几何·对比原型 → 极简档 → form A。原型仍模糊时，再用下面的兜底信号：
 
 ```
 1. 先粗估档位（无需精确节点数，先看明显信号）：
@@ -360,11 +390,14 @@ grep "Missing character" file.log     # 静默失败检查，关键
 pdftoppm -png -r 300 file.pdf out     # 产出 out-1.png
 # overlap.json 落在 .tex 同目录（sub-agent ④.5 步用 Read 读这个绝对路径）
 python3 references/pdf-overlap-checker.py file.pdf --json > "$(dirname file.pdf)/overlap.json"
-# 跑完检查 overlap.json — 7 类检测：
-#   基础 5 类（直接 fix）: text-overlap / text-overflow / off-center / text-line / line-crossing
+# 跑完检查 overlap.json — 8 类检测：
+#   基础 6 类（直接 fix）: text-overlap / text-overflow / off-center / text-line
+#                         / line-crossing / node-outside-zone
 #   candidate 2 类（需 triage）: line-through-node / node-overlap
 # ERROR 类大概率是真 bug 直接修；candidate 类是几何线索（heatmap 矩阵 / fan-in 收敛
 # / panel 边界等常误报），sub-agent 在 ④.5 自评时按坐标对照 PNG 决定 fix 还是 ignore。
+# node-outside-zone = 子框「内容超容器尺寸」溢出所属 zone（经典 mode-A 失败：换了更长的
+# 文字/内容，撑破 skeleton 的固定宽度）。FP-safe 设计（只抓真比 zone 大的框），命中即真 bug。
 ```
 draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawio && pdftoppm -png -r 300 out.pdf out`。
 
@@ -379,8 +412,8 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 ```
 0. Read 渲染出的 out-1.png + 视觉直觉先行（应用 3 大法则，见下）
 1. Read overlap.json（路径 = .tex 同目录的 overlap.json，步骤 ④ 跑出来的结构化几何检测）
-2. 加载 references/visual-review-checklist.md（18 项强制审查清单）
-3. 逐项回答 46 个 Y/N：S1-S10（空间）/ T1-T7（文字）/ M1-M10（语义）/ E1-E14（连线精度）/ A1-A5（美学）
+2. 加载 references/visual-review-checklist.md（强制审查清单——**条目与数量以该文件为唯一真相源**，本文件不另定数量或 ID 范围）
+3. 逐项回答 checklist 中列出的**全部条目** Y/N（维度：编译 T / 空间 S / 语义 M / 连线 E / 美学 A·V）
    每项必须有一句证据（"我在 PNG 中看到…" 或 "overlap.json 中 N 处 line-through-node 我标为 …"），不允许凭印象
 4. 任一项 N → 列入 blocker → 输出 patch → Edit → 回 ④ 重编译 → 回 0
 5. Step 0 + 全部 18 项 Y → **把图给用户看**（用户终审，AI 视觉有盲区）
@@ -439,14 +472,14 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 **升级机制**：
 - 第 3 轮还有 ≥5 blocker → 局部修补无救，回步骤① 重新设计画图指令
 - 同一 blocker 连续 2 轮没修好 → 你修的方向错了，换思路
-- 复杂图（≥40 元素）/ **mode C 一律**：并行 spawn 多镜头审查 agent（见下「mode C 独立多镜头审查 gate」），统一收集 blocker
+- **mode A / mode C 一律**（简单图也不可免；复杂图 ≥40 元素更是）：并行 spawn 多镜头审查 agent（见下「独立多镜头审查 gate」），统一收集 blocker
 - **自评 + 对抗 agent 全部说 0 blocker 后，仍然把图先给用户看**——人眼能发现 sub-agent + 自评全漏掉的问题（实测案例：用户在 Round 10 一眼指出 CMAM 标题切断边框、箭头刺入框内、junction dot 被 tip 戳——这 3 个我和 2 个对抗 agent 全没发现）。**用户的视觉是最后闸门，不是绕过点**。
 
 **强制约束**：交付前必须能说出 PNG 里**具体的视觉细节**（哪些颜色在哪、哪个 zone 在哪一侧、热力图对角线特征等），证明你视觉输入过。
 
 **单点最小修改原则**：每轮 patch 只改一类问题（如"全部标签重叠"或"全部轴标题没下移"），不要一轮里大改——大改会引入新 bug。一轮一类 blocker。优先用 `yshift/xshift` 微调位置，避免改坐标主框架。
 
-#### mode C 强制独立多镜头审查 gate（2026-05-29 mode C 测试坐实，不可跳过）
+#### 强制独立多镜头审查 gate——mode A + mode C 默认路径（2026-05-29 mode C 坐实、2026-07-22 mode A 坐实，不可跳过）
 
 **为什么强制**：mode C 测试（同心圆 / Sankey / RLHF 闭环，3 张从零图）实测 **3/3 都崩，且每次崩在不同轴上**，但有统一规律——**图里最"新"、最无 skeleton 先例的那个结构元素，就是崩点**：
 - 同心圆 → 现编的多面板**数字叙事自相矛盾**（核心层在威胁锥里没削弱却号称拦 99%）
@@ -455,13 +488,15 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 **而 generator 自审对这个核心缺陷系统性失明**：三张分别跑了 4 / 3 / 1 轮自审，全部自评"发表级 / closes cleanly"，**全部漏掉了最核心的那个缺陷**。**自审轮数多少都救不了——失明是结构性的**（generator 看不见"我想画的"↔"实际渲染的"差距）。**每一次，只有独立对抗式多镜头审查抓到了核心缺陷。**
 
-**所以 mode C 的 ④.5 不允许只靠 generator 自审**。Step 0 + 18 项照走，但**完成后必须再过这道 gate**：由 orchestrator **独立 spawn 4 个全新审查 agent**（各自空白上下文），各 Read 渲染出的 PNG，**对抗式**找问题（默认"图里有 bug，去找"），各自返回 blocker（含 severity + 位置 + **具体视觉证据**，证明它真看了图）：
+**2026-07-22 端到端实测把 gate 扩到 mode A 默认路径**：skeleton 复用图（纵向联邦学习 × skeleton-F）checker 全绿、生成方 ④.5 自审通过，独立 gate 仍抓出 3 个 HIGH 语义缺陷（skeleton 拓扑绑架语义：子框无内部箭头 + 错误 1-1 分发、公式下标矛盾、迭代无闭环）+ 编造数值，复审又追出更深一层的协议自毁缺陷。**mode A 的语义缺陷率不比 mode C 低，只是崩的轴不同：mode C 崩在"图里最新的结构"，mode A 崩在"skeleton 拓扑与需求语义的错配处"。**同场 mode C 图（Transformer+MoE）四镜头抓出 5 HIGH（门控约定矛盾 0.61+0.24≠1、fit 面板 9.4pt 叠切——均为 checker 结构盲区且 generator 自查恰好自证盲区：它验过"分布合计=1.00"仍没看出约定冲突）。且**两图的修复轮都引入了新伤**（全角括号致标题溢出、角标内移压线），全靠"改完再跑一轮 gate"抓回——复审不是建议，是必须。
+
+**所以 mode A 与 mode C 的 ④.5 都不允许只靠 generator 自审**。Step 0 + 18 项照走，但**完成后必须再过这道 gate**：由 orchestrator **独立 spawn 4 个全新审查 agent**（各自空白上下文），各 Read 渲染出的 PNG，**对抗式**找问题（默认"图里有 bug，去找"），各自返回 blocker（含 severity + 位置 + **具体视觉证据**，证明它真看了图）：
 
 > 🔴 **"独立"严格指：另起的全新 agent / 空白上下文——不是 generator 自己在同一上下文里"审 4 遍"。** 同上下文自审与 generator 共享同一套盲区，等于没审。**实测（fig4 复杂图）：generator 按本 gate 跑、却跑成"同模型 self-pass 4 遍"，照样漏掉 Sankey 断裂+失比例的重崩；是独立 spawn 的 agent 才抓到。self-pass ≠ gate。**
 >
 > ⚙️ **谁来跑这道 gate**：是**顶层 orchestrator（带 Agent/workflow 工具的主循环）**的职责，**不是 generator 的**。generator / implementer 子 agent 通常 **spawn 不出独立子 agent**（环境常只暴露重量级 team 工具、无轻量 spawner），把 gate 交给它只会退化成 self-pass（实测 fig4 + fig5 两次都如此）。正确流程：generator 做完自己的 ④.5 自审并交付 → **控制权回到 orchestrator → 由 orchestrator 独立 spawn 4 个审查 agent 跑 gate**。
 
-| 镜头 | 专盯 | mode C 高发崩点 |
+| 镜头 | 专盯 | 高发崩点（mode C=新结构 / mode A=拓扑错配+stale-semantics） |
 |---|---|---|
 | **geometry** | 新布局几何是否真画对（同心是否真同心、环是否闭合、Sankey band 宽是否 ∝ 量、节点是否被填充非空心、穿框/裁切/大空白） | **最高发——新结构的几何** |
 | **semantic** | 信息流 / 顺序 / 方向是否对；**独立重算图里所有数字/公式**，查跨面板一致性 | 现编数据自相矛盾 |
@@ -476,12 +511,16 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 **机制**：用 Agent 工具 / workflow **真正并行 spawn 出 4 个独立子 agent**（每镜头喂 PNG 路径 + 该图"应有模型"让 semantic 独立重算）。**关键是"另起 agent + 空白上下文 + 对抗 + 多视角"——这是 mode C 唯一奏效的兜底；同上下文自审多遍不算数（实测会连同 generator 一起漏）。**
 
+**🔴 gate 通过的硬性举证（杜绝静默 self-pass）**：声称本 gate 通过前，orchestrator 必须在回复里**列出 4 个真实 spawn 出的审查 agent 的 ID/标签**，并**各引一句它返回的具体视觉证据**（如"geometry：同心三环圆心实测偏移 ~0.4cm"）。**给不出 4 个独立 agent 的 ID + 各自证据 = gate 视为未通过**，不得当作通过交付。
+
+**🔴 spawn 不出独立 agent 时：停，不要自审蒙混**。若当前环境无法真正另起 4 个空白上下文 agent（只有重量级 team 工具 / 无轻量 spawner），**禁止**降级成"同上下文自审 4 遍"假装过 gate。正确做法：把图连同一行明确声明 **"⚠️ 独立多镜头 gate 未能运行（环境无独立 spawner），以下结果未经对抗审查"** 一起交给用户，请用户人工充当对抗审查、或换到可 spawn 的环境再跑。**"gate 未运行"是交付阻断项（blocker），不是可跳过的软步骤**——宁可显式声明没跑，也不要让用户误以为已过 gate。
+
 ### ⑤ 用户终审 + 交付
 1. **把 PNG 给用户看**（不是询问"我做完了吗"，是直接展示结果）
 2. 有参考图时同时跑 `python3 references/figure-diff.py <ref.png> <out.png>` 得 SSIM；< 0.85 的 3×3 区域和用户一起重点看
 3. 用户指出问题 → 回 ④.5，把问题作为新一轮 blocker；用户没问题 → 交付
 
-**步骤⑤ 不再独立做"自审三遍法"**——所有自审已经在 ④.5 的 30 项穷举里做过。把同一组审查做两次只是认知疲劳的来源，不是质量提升。
+**步骤⑤ 不再独立做"自审三遍法"**——所有自审已经在 ④.5 对 checklist 全部条目的穷举里做过。把同一组审查做两次只是认知疲劳的来源，不是质量提升。
 
 ### ⑥ 迭代到完美（无上限）
 
@@ -516,8 +555,8 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 
 Φ.2 — Vision-audit 把关（简化版 ④.5）
    - Read 渲染出的 PNG
-   - 走 Step 0（3 大法则）+ 18 项中的关键 6 项（S1 整图对齐 / S5 元素间距 /
-     T1 文字渲染 / M3 信息流方向 / E5 箭头清晰 / V1 整体审美）
+   - 走 Step 0（3 大法则）+ checklist 中的关键 6 项（S1 标签不重叠 / S9 元素间距 /
+     T1 文字渲染 / M3 信息流方向 / E1 箭头清晰止于框外 / V1 整体审美）
    - 任何 blocker → 报告给用户，要求修复后再入库
 
 Φ.3 — 分析 layout pattern + 决策入库方式（**关键 gate**）
@@ -576,7 +615,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
    - 写文件：`references/tikz-snippets/example-skeleton-{X}.tex`（X = 完整文件名前缀）
    - 渲染：`xelatex -interaction=nonstopmode` + `pdftoppm -r 100 -png`
      **PNG 输出到 `references/tikz-snippets/previews/example-skeleton-{X}.png`**
-     （注意是 `previews/` 子目录，不是 `tikz-snippets/` 根，与现有 6 个一致）
+     （注意是 `previews/` 子目录，不是 `tikz-snippets/` 根，与现有 example-skeleton 预览放在一起）
    - 更新 `references/tikz-snippets/README.md` inline gallery：
      a) 定位 gallery 表（anchor 行：含 `example-skeleton-B-horizontal.tex` 的 markdown 表格）
      b) 插入位置：
@@ -647,7 +686,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 | 步骤③ 决策门 | `references/figure-spec.schema.md`（B 路 spec） |
 | 步骤③ 走 B 路 → 跑 `dot-to-tikz.py` | （脚本，不需 Read） |
 | 步骤③ 走模板/从零 → 用 TikZ | `references/tikz-global-rules.md` + `references/tikz-template.tex` |
-| **步骤③ 复杂档需嵌入 viz / panel / 公式** | **`references/tikz-snippets/` ⭐ 优先用 snippet 拼装而不是从零写**（含 6 个手工精雕模板：attention-heatmap / bar-chart / hyperparams-table / multi-zone-palette / pipeline-stages / formula-box） |
+| **步骤③ 复杂档需嵌入 viz / panel / 公式** | **`references/tikz-snippets/` ⭐ 优先用 snippet 拼装而不是从零写**（含 21 个手工精雕片段 + 6 个 example-skeleton，**完整清单见 `references/tikz-snippets/README.md`**；下列只是常用几个，勿局限：attention-heatmap / bar-chart / hyperparams-table / multi-zone-palette / pipeline-stages / formula-box …） |
 | 步骤④.5 视觉反馈每一轮 | `references/visual-review-checklist.md`（18 项强制清单） |
 | 配色需求 | `references/tikz-colors.md` |
 | 分层架构图 | `references/layered-architecture.md` |
@@ -668,7 +707,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 | `dot-to-tikz.py <spec.json>` | B 路：spec → graphviz 自动布局 → TikZ | 结构化图 step ③ |
 | `tikz-validator.py <file.tex>` | 微斜线/溢出/碰撞/方向反转（几何/语法 gate） | 编译前必跑 |
 | `tikz-design-linter.py <file.tex> [--type ...]` | 元素数/尺寸比/线型/hero/嵌入viz（设计野心 gate） | 编译前必跑 |
-| `pdf-overlap-checker.py <file.pdf> [--json]` | PDF 坐标级重叠 + 线穿节点 + 节点重叠几何检测（**7 类**：text-overlap / text-overflow / off-center / text-line / line-crossing / line-through-node / node-overlap） | 编译后必跑 |
+| `pdf-overlap-checker.py <file.pdf> [--json]` | PDF 坐标级重叠 + 线穿节点 + 节点重叠 + 子框超出 zone 几何检测（**8 类**：text-overlap / text-overflow / off-center / text-line / line-crossing / node-outside-zone / line-through-node / node-overlap） | 编译后必跑 |
 | `figure-diff.py <ref.png> <out.png>` | SSIM + 3×3 区域差异 | 复刻任务必跑 |
 | `tikz-path-router.py <spec.json>` | A* 自动避障路径 | 连线 ≥8 条可选 |
 
@@ -677,3 +716,18 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 ## 领域自适应
 
 收到输入后**先识别论文领域**（计算机/密码学/生物/物理/化学/AI/网络/系统/区块链等），以该领域专家身份选术语和布局风格。
+
+---
+
+## 维护者回归自检（⚠️ 不在画图流程内 —— 生成图时不要跑）
+
+**仅当你在修改本 skill（SKILL.md / references / 脚本）时使用。** 改动前后各跑一次，确认这次编辑没有
+引入"几何/编译可检测"的回归：
+
+```bash
+cd references/eval && python3 runner.py      # 改前确认全绿；改后若有 FAIL 即本次回归
+```
+
+它对一组冻结 fixture 跑 `dot-to-tikz → xelatex → tikz-validator → pdf-overlap-checker`，与 baseline 比对，
+退出码 1 = 有回归。**只是回归地板**：抓编译/缺字/微斜线/重叠等几何问题，**抓不到**语义/审美 slop（那些靠 ④.5）。
+详见 `references/eval/README.md`。新增检查项或确认新基准后再 `python3 runner.py --update-baselines`。

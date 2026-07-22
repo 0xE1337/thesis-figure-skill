@@ -1,0 +1,12 @@
+% 负向 fixture：故意制造"微斜线"——相邻路径点 x、y 同时小幅变化。
+% tikz-validator.py 必须判 ERROR（exit 2）。若它放过了，说明几何门被削弱。
+% 只跑 validator（静态正则），不编译。
+\documentclass[tikz,border=2pt]{standalone}
+\begin{document}
+\begin{tikzpicture}
+  \node[draw] (a) at (0,0) {A};
+  \node[draw] (b) at (6,1) {B};
+  % 本该正交 L 形，却画成一条斜率极小的斜线（微斜线 bug 的典型形态）
+  \draw[->] (0,0) -- (3,0.3) -- (6,0.6);
+\end{tikzpicture}
+\end{document}

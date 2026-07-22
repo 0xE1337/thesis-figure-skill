@@ -4,6 +4,18 @@
 % USAGE: Adapted from a GOLD STANDARD figure (Privacy-Preserving MPC
 % Protocol). Sub-agent: copy ENTIRE file as figure.tex, change content.
 %
+% ⚙ LAYOUT = BY-CONSTRUCTION (positioning + fit + node anchors): the 4
+%   phase columns are chained off named pitch macros, sub-boxes stack with
+%   below=of, zone backgrounds use fit, cross-phase arrows ride node
+%   anchors. Change content / restack sub-boxes and the rest REFLOWS.
+%   ⚠ The "uniform y=16.8 / y=16.5 / y=6.0" chip+zone numbers and the CRS
+%   y=8.25 / Security y=6.2 below are ORIGINAL design intent — alignment is
+%   now uniform BY CONSTRUCTION (chips anchored to each zone .north; zones
+%   share one height; sub-boxes stacked by positioning), so manual y
+%   bookkeeping no longer applies. SEMANTIC constraints (renaming, ≤6-char
+%   bar labels, shares-below-box, keep-hero-right-empty, perf-box sizing)
+%   STILL HOLD.
+%
 % LAYOUT MODEL:
 %   ┌───────────┬───────────┬───────────┬───────────┐
 %   │ Phase 1   │ Phase 2   │ Phase 3   │ Phase 4   │
@@ -101,6 +113,15 @@
 \pgfdeclarelayer{background}
 \pgfsetlayers{background,main}
 
+% ---- single source of truth for layout rhythm ----
+% Column pitches are centre-to-centre. They differ because the four phases
+% have different widths (Phase 3 is the wide hero); each pitch is defined
+% ONCE here and the column centres are chained off them below.
+\def\gapAB{6cm}    % Phase 1 -> Phase 2
+\def\gapBC{6.5cm}  % Phase 2 -> Phase 3 (wider: hero column)
+\def\gapCD{5.5cm}  % Phase 3 -> Phase 4
+\def\ztop{16.5}    % UNIFORM top y-rail shared by all four zones
+
 \begin{document}
 \begin{tikzpicture}[
     every node/.style={font=\small},
@@ -124,106 +145,124 @@
 ]
 
 % ================================================================
-%  Title
+%  COLUMN REFERENCE CENTERS — spaced left->right by \colgap.
+%  Re-spacing the whole figure = change \colgap in one place.
 % ================================================================
-\node[font=\large\bfseries] at (10, 17.5)
-    {Privacy-Preserving Multi-Party Computation Protocol};
+\coordinate (c1) at (2.5, 0);
+\coordinate (c2) at ($(c1)+(\gapAB,0)$);
+\coordinate (c3) at ($(c2)+(\gapBC,0)$);
+\coordinate (c4) at ($(c3)+(\gapCD,0)$);
 
 % ================================================================
-%  Phase 1: Key Generation (x=0~5)
+%  Phase 1: Key Generation — column on (c1), top-anchored chain
 % ================================================================
-\node[purple_node, minimum width=4cm, minimum height=2.2cm] (keygen) at (2.5, 14.5)
+\node[purple_node, minimum width=4cm, minimum height=2.2cm]
+    (keygen) at (c1 |- 0,14.5)
     {\textbf{Key Generation}\\[2pt]{\footnotesize $(pk, sk) \leftarrow \mathrm{KeyGen}(1^\lambda)$}\\[-1pt]{\scriptsize $\lambda = 128$ bits}};
 
-\node[cyan_node, minimum width=3.5cm, minimum height=1.5cm] (params) at (2.5, 11.5)
+\node[cyan_node, minimum width=3.5cm, minimum height=1.5cm, below=1.3cm of keygen]
+    (params)
     {\textbf{Public Parameters}\\[1pt]{\scriptsize $pp = (G, g, p, H)$}};
 
-\node[gold_node, minimum width=3.5cm, minimum height=1.5cm] (crs) at (2.5, 9.0)
+\node[gold_node, minimum width=3.5cm, minimum height=1.5cm, below=1.0cm of params]
+    (crs)
     {\textbf{CRS Setup}\\[1pt]{\scriptsize Common Reference String}};
 
+% Security annotation — part of Phase 1 column; placed before the zone fit
+% so the zone background grows to contain it (no hand-typed bottom y).
+\node[font=\scriptsize, text=acaRedLine, fill=acaRedFill!50, draw=acaRedLine!40,
+      rounded corners=3pt, inner sep=4pt, anchor=north west]
+      at ($(crs.south west)+(-0.3,-0.55)$) (secnote)
+    {\shortstack[l]{Security: $\lambda = 128$ bits\\Semi-honest model\\UC-secure}};
+
 % ================================================================
-%  Phase 2: Encryption & Secret Sharing (x=6~12)
+%  Phase 2: Encryption & Secret Sharing — column on (c2)
 % ================================================================
 % Party A
-\node[blue_node, minimum width=3.2cm, minimum height=2.0cm] (partyA) at (8.5, 15.0)
+\node[blue_node, minimum width=3.2cm, minimum height=2.0cm]
+    (partyA) at (c2 |- 0,15.0)
     {\textbf{Party A}\\[1pt]{\footnotesize $x_A \in \mathbb{Z}_p$}\\[-1pt]{\scriptsize Enc$(pk, x_A) \to c_A$}};
 % Party B
-\node[green_node, minimum width=3.2cm, minimum height=2.0cm] (partyB) at (8.5, 11.5)
+\node[green_node, minimum width=3.2cm, minimum height=2.0cm, below=1.5cm of partyA]
+    (partyB)
     {\textbf{Party B}\\[1pt]{\footnotesize $x_B \in \mathbb{Z}_p$}\\[-1pt]{\scriptsize Enc$(pk, x_B) \to c_B$}};
 % Party C
-\node[orange_node, minimum width=3.2cm, minimum height=2.0cm] (partyC) at (8.5, 8.0)
+\node[orange_node, minimum width=3.2cm, minimum height=2.0cm, below=1.5cm of partyB]
+    (partyC)
     {\textbf{Party C}\\[1pt]{\footnotesize $x_C \in \mathbb{Z}_p$}\\[-1pt]{\scriptsize Enc$(pk, x_C) \to c_C$}};
 
-% Secret sharing visualization (small matrix BELOW each party box).
-% Previously placed INSIDE box at ybase=14.2/10.7/7.2 but overlapped
-% with the centered "Enc(pk, x_X) → c_X" formula at the bottom text
-% line. Moved outside to ybase=13.55/10.05/6.55 (just below each box's
-% bottom edge with 0.1cm gap). Centered horizontally under party at
-% x=8.5 (base x=7.8 + 3 boxes * 0.5 spacing = group center 8.5).
-% Requires Phase 2 zone bottom extended from y=6.5 to y=6.0 to contain
-% Party C's shares + label.
-\foreach \party/\ybase/\col in {A/13.55/acaBlueLine, B/10.05/acaGreenLine, C/6.55/acaOrangeLine} {
-  \foreach \s in {0,1,2} {
-    \fill[\col!30] ({7.8+\s*0.5}, \ybase) rectangle ({7.8+\s*0.5+0.4}, {\ybase+0.35});
-    \draw[\col, thin] ({7.8+\s*0.5}, \ybase) rectangle ({7.8+\s*0.5+0.4}, {\ybase+0.35});
-  }
-  \node[font=\tiny, text=\col] at (8.5, {\ybase-0.2}) {shares};
+% Secret sharing visualization — small matrix BELOW each party box.
+% Re-anchored to the party node: scope shifted to each party's .south, so
+% the shares row travels with its party box under any reflow.
+\foreach \party/\col in {partyA/acaBlueLine, partyB/acaGreenLine, partyC/acaOrangeLine} {
+  \begin{scope}[shift={($(\party.south)+(0,-0.30)$)}]
+    \foreach \s in {0,1,2} {
+      \fill[\col!30] ({(\s-1.5)*0.5}, 0) rectangle ({(\s-1.5)*0.5+0.4}, 0.35);
+      \draw[\col, thin] ({(\s-1.5)*0.5}, 0) rectangle ({(\s-1.5)*0.5+0.4}, 0.35);
+    }
+    \node[font=\tiny, text=\col] at (-0.05, -0.2) {shares};
+  \end{scope}
 }
 
 % ================================================================
-%  Phase 3: Secure Computation (x=13~18) — Core
+%  Phase 3: Secure Computation — Core engine on (c3)
 % ================================================================
-\node[red_node, minimum width=5.5cm, minimum height=7.5cm, line width=1.5pt] (mpc) at (15, 11.5) {};
-\node[font=\small\bfseries, text=acaRedLine!80!black] at (15, 14.8) {Secure MPC Engine};
+% Engine border FIRST (empty bordered box, fitted around its sub-modules).
+% We pre-declare the sub-box positions via coordinates, build the border,
+% then draw the sub-boxes on top so they remain visible.
+\node[font=\small\bfseries, text=acaRedLine!80!black]
+    (mpclabel) at (c3 |- 0,14.8) {Secure MPC Engine};
 
-% Garbled Circuit inside
-\node[pink_node, minimum width=4.0cm, minimum height=1.5cm] (garbled) at (15, 13.5)
+\node[pink_node, minimum width=4.0cm, minimum height=1.5cm, below=0.5cm of mpclabel]
+    (garbled)
     {\textbf{Garbled Circuit}\\[-1pt]{\scriptsize $\tilde{C} = \mathrm{Garble}(C, \{k_i\})$}};
-
-% OT (Oblivious Transfer)
-\node[teal_node, minimum width=4.0cm, minimum height=1.5cm] (ot) at (15, 11.5)
+\node[teal_node, minimum width=4.0cm, minimum height=1.5cm, below=0.5cm of garbled]
+    (ot)
     {\textbf{Oblivious Transfer}\\[-1pt]{\scriptsize $\binom{2}{1}\text{-OT}^\ell$}};
-
-% Evaluation
-\node[yellow_node, minimum width=4.0cm, minimum height=1.5cm] (eval) at (15, 9.5)
+\node[yellow_node, minimum width=4.0cm, minimum height=1.5cm, below=0.5cm of ot]
+    (eval)
     {\textbf{Circuit Evaluation}\\[-1pt]{\scriptsize $y = \mathrm{Eval}(\tilde{C}, \tilde{x})$}};
 
-% Internal arrows
+% Engine extent rails — invisible coordinates that give the engine box the
+% original's generous ~1cm of internal padding above the top sub-box and
+% below the bottom sub-box (the original used a fixed 7.5cm-tall box). The
+% engine fit spans these so its proportions match without hand-sizing.
+\coordinate (engtop) at ($(garbled.north)+(0,1.0)$);
+\coordinate (engbot) at ($(eval.south)+(0,-1.0)$);
+
+% Engine anchor — an INVISIBLE fit node spanning the rails + sub-modules.
+% It only provides the (mpc) anchors used by the cross-phase arrows; the
+% VISIBLE engine box (red fill + thick border) is drawn later, in the
+% background layer AFTER the zone fills, so it paints on top of the zone
+% but stays behind the sub-boxes. Replaces the hand-sized 5.5x7.5cm box.
+\node[fit=(engtop)(engbot)(garbled)(ot)(eval), draw=none, fill=none,
+      inner xsep=12pt, inner ysep=0pt] (mpc) {};
+
+% Internal arrows — node anchors only.
 \draw[arrow] (garbled.south) -- (ot.north);
 \draw[arrow] (ot.south) -- (eval.north);
 
-% Gate count mini-chart REMOVED. It was at shift (14.25, 8.0) with bars
-% reaching y=9.5, which OVERLAPPED the Circuit Evaluation box (spans
-% y=8.75..10.25) and its "y = Eval(C̃, x̃)" formula. The MPC engine
-% box height (7.5cm) didn't have enough vertical room to fit a 4th
-% visualization without overlap. Removed the chart entirely to keep
-% Garbled / OT / Eval text legible.
-
 % ================================================================
-%  Phase 4: Output & Verification (x=19~23)
+%  Phase 4: Output & Verification — column on (c4)
 % ================================================================
-\node[lime_node, minimum width=3.5cm, minimum height=2.0cm] (output) at (20.5, 14.0)
+\node[lime_node, minimum width=3.5cm, minimum height=2.0cm]
+    (output) at (c4 |- 0,14.0)
     {\textbf{Output Recovery}\\[1pt]{\footnotesize $y = f(x_A, x_B, x_C)$}\\[-1pt]{\scriptsize Dec$(sk, c_y) \to y$}};
 
-\node[teal_node, minimum width=3.5cm, minimum height=2.0cm] (verify) at (20.5, 10.5)
+\node[teal_node, minimum width=3.5cm, minimum height=2.0cm, below=1.5cm of output]
+    (verify)
     {\textbf{ZK Verification}\\[1pt]{\footnotesize $\pi \leftarrow \mathrm{Prove}(y, w)$}\\[-1pt]{\scriptsize $\mathrm{Verify}(\pi, y) = 1$}};
 
-% Performance panel — width shrunk 4.0 → 3.6cm so the box edges don't
-% hug the Phase 4 zone right border (zone spans x=18.5..22.5; previous
-% box edges at exactly x=18.5/22.5 = zone edges). Now box edges at
-% x=18.7/22.3 with 0.2cm margin on each side.
+% Performance panel — width 3.6cm (leaves margin inside the Phase 4 zone).
 \node[rectangle, rounded corners=5pt, draw=acaBlueLine, fill=acaBlueFill!30,
-      minimum width=3.6cm, minimum height=3.0cm, thick] (perf) at (20.5, 6.5) {};
-\node[font=\scriptsize\bfseries, text=acaBlueLine!80!black] at (20.5, 7.7) {Performance};
+      minimum width=3.6cm, minimum height=3.0cm, thick, below=1.5cm of verify]
+      (perf) {};
+\node[font=\scriptsize\bfseries, text=acaBlueLine!80!black, anchor=north]
+      at ($(perf.north)+(0,-0.2)$) {Performance};
 
-% Mini bar chart — wider bar spacing (0.95cm) so "Latency" label
-% doesn't overlap "Comm" / "Proof" labels (was 0.7cm gap → overlap).
-% Shift y was 5.3 → labels at abs y=5.1, only 0.1cm above box bottom y=5.0.
-% Raised to 5.55 → labels at abs y=5.35, 0.35cm margin from box bottom.
-% X-axis right end was at scope x=3.6 (abs x=22.4) — overflowed the box
-% right edge at x=22.3 (after width shrink 4.0→3.6). Shortened to 3.3
-% (abs x=22.1) so the arrow tip sits 0.2cm inside the box.
-\begin{scope}[shift={(18.8, 5.55)}]
+% Mini bar chart — kept intact, re-anchored to the perf node centre.
+% Local origin at the axis foot; everything in perf-local coords.
+\begin{scope}[shift={($(perf.center)+(-1.7,-1.05)$)}]
   \draw[-{Stealth[scale=0.5]}, acaGreyLine] (0.2, 0) -- (0.2, 2.0);
   \draw[-{Stealth[scale=0.5]}, acaGreyLine] (0.2, 0) -- (3.3, 0);
   \fill[barBlue, rounded corners=1pt] (0.55, 0) rectangle (1.05, 1.6);
@@ -238,12 +277,62 @@
 \end{scope}
 
 % ================================================================
-%  CONNECTIONS
+%  ZONE BACKGROUNDS — built with `fit` over each column's contents +
+%  a per-zone UNIFORM-top rail coordinate (all share y=\ztop) so every
+%  zone top aligns. Bottoms grow to each column's lowest element.
+%  The rail coordinates carry no visible mark; they only pin the fit.
+% ================================================================
+% Per-column top-rail coordinates at the shared \ztop level.
+\coordinate (t1) at (c1 |- 0,\ztop);
+\coordinate (t2) at (c2 |- 0,\ztop);
+\coordinate (t3) at (c3 |- 0,\ztop);
+\coordinate (t4) at (c4 |- 0,\ztop);
+
+% Per-zone bottom rails — pin each zone's lower edge a uniform ~0.45cm
+% below its lowest content, so all four zones share the same bottom margin
+% (matching the original's deliberate breathing room under each column).
+\def\zbotpad{0.45}
+\coordinate (b1) at ($(secnote.south)+(0,-\zbotpad)$);
+\coordinate (b2) at ($(partyC.south)+(0,-0.95)$);   % below partyC shares row
+\coordinate (b3) at ($(engbot)+(0,-\zbotpad)$);     % below the engine box
+\coordinate (b4) at ($(perf.south)+(0,-\zbotpad)$);
+
+\begin{pgfonlayer}{background}
+  % Phase 1 zone — fit over keygen..secnote + top rail + bottom rail.
+  \node[fit=(t1)(keygen)(b1), inner xsep=10pt, inner ysep=0pt,
+        rounded corners=10pt, fill=zonePurpleBg, draw=acaPurpleLine!25,
+        thick] (zone1) {};
+  % Phase 2 zone — fit over party column + top rail + bottom shares rail.
+  \node[fit=(t2)(partyA)(b2), inner xsep=10pt, inner ysep=0pt,
+        rounded corners=10pt, fill=zoneBlueBg, draw=acaBlueLine!25,
+        thick] (zone2) {};
+  % Phase 3 zone — fit over the (invisible) MPC engine box + top/bottom rail,
+  % with extra x-padding so the visible engine border keeps a side margin.
+  \node[fit=(t3)(mpc)(b3), inner xsep=14pt, inner ysep=0pt,
+        rounded corners=10pt, fill=zoneRedBg, draw=acaRedLine!25,
+        thick] (zone3) {};
+  % Phase 4 zone — fit over output..perf + top rail + bottom rail.
+  \node[fit=(t4)(output)(b4), inner xsep=10pt, inner ysep=0pt,
+        rounded corners=10pt, fill=zoneGreenBg, draw=acaTealLine!25,
+        thick] (zone4) {};
+\end{pgfonlayer}
+
+% Visible MPC engine box — drawn in the background layer AFTER the zone
+% fills, so the red fill + thick border sit ON TOP of the zone3 fill but
+% BEHIND the (main-layer) sub-boxes. fit over the same content as the
+% invisible (mpc) anchor so the two coincide exactly.
+\begin{pgfonlayer}{background}
+  \node[red_node, fit=(engtop)(engbot)(garbled)(ot)(eval),
+        inner xsep=12pt, inner ysep=0pt, line width=1.5pt] (mpcbox) {};
+\end{pgfonlayer}
+
+% ================================================================
+%  CONNECTIONS — all via NODE ANCHORS
 % ================================================================
 % Phase 1 → Phase 2
 \draw[data_arrow] (keygen.east) -- (partyA.west);
-\draw[arrow] (params.east) -- ++(1.5, 0) |- (partyB.west);
-\draw[arrow] (crs.east) -- ++(1.5, 0) |- (partyC.west);
+\draw[arrow] (params.east) -- ++(0.85, 0) |- (partyB.west);
+\draw[arrow] (crs.east) -- ++(0.85, 0) |- (partyC.west);
 
 % Phase 2 → Phase 3
 \draw[data_arrow, rounded corners=6pt] (partyA.east) -- (mpc.west |- partyA);
@@ -261,64 +350,27 @@
 \draw[arrow] (verify.south) -- (perf.north);
 
 % ================================================================
-%  ZONE BACKGROUNDS
+%  PHASE LABELS — chips anchored UNIFORMLY to each zone .north (gap 0.3cm)
 % ================================================================
-\begin{pgfonlayer}{background}
-  % All four zones now share top y=16.5 so all four phase chips at y=16.8
-  % sit uniformly 0.3cm above their respective zone tops (was a mix of
-  % 16.0/16.5).
-  %
-  % Phase 1 bottom 6.0 contains Security note at (0.5, 6.2).
-  \fill[zonePurpleBg, rounded corners=10pt] (0.2, 6.0) rectangle (5.0, 16.5);
-  \draw[acaPurpleLine!25, thick, rounded corners=10pt] (0.2, 6.0) rectangle (5.0, 16.5);
-
-  % Phase 2 bottom 6.0 contains Party C's external shares matrix.
-  \fill[zoneBlueBg, rounded corners=10pt] (5.8, 6.0) rectangle (11.2, 16.5);
-  \draw[acaBlueLine!25, thick, rounded corners=10pt] (5.8, 6.0) rectangle (11.2, 16.5);
-
-  \fill[zoneRedBg, rounded corners=10pt] (11.8, 7.0) rectangle (18.2, 16.5);
-  \draw[acaRedLine!25, thick, rounded corners=10pt] (11.8, 7.0) rectangle (18.2, 16.5);
-
-  \fill[zoneGreenBg, rounded corners=10pt] (18.5, 4.5) rectangle (22.5, 16.5);
-  \draw[acaTealLine!25, thick, rounded corners=10pt] (18.5, 4.5) rectangle (22.5, 16.5);
-\end{pgfonlayer}
-
-% ================================================================
-%  PHASE LABELS — uniform geometry
-% ================================================================
-% Previous mix: Phase 2 zone top was 16.5 (chip at 16.3 INSIDE that zone),
-% Phase 1/3/4 zone tops were 16.0 (chips at 16.3 ABOVE those zones). The
-% inconsistent y-relationship made Phase 2 chip look "sitting inside" the
-% zone while the others "floated above". Fixed by:
-%   - all four zones get top y=16.5 (uniform)
-%   - all four chips placed at y=16.8 (above zones with 0.3cm gap)
 \node[font=\footnotesize\bfseries, fill=acaPurpleFill!80, draw=acaPurpleLine!50,
-      rounded corners=3pt, inner sep=4pt, text=acaPurpleLine!80!black]
-      at (2.5, 16.8) {Phase 1: Setup};
+      rounded corners=3pt, inner sep=4pt, text=acaPurpleLine!80!black, anchor=center]
+      at ($(zone1.north)+(0,0.3)$) {Phase 1: Setup};
 \node[font=\footnotesize\bfseries, fill=acaBlueFill!80, draw=acaBlueLine!50,
-      rounded corners=3pt, inner sep=4pt, text=acaBlueLine!80!black]
-      at (8.5, 16.8) {Phase 2: Input Encryption};
+      rounded corners=3pt, inner sep=4pt, text=acaBlueLine!80!black, anchor=center]
+      at ($(zone2.north)+(0,0.3)$) {Phase 2: Input Encryption};
 \node[font=\footnotesize\bfseries, fill=acaRedFill!80, draw=acaRedLine!50,
-      rounded corners=3pt, inner sep=4pt, text=acaRedLine!80!black]
-      at (15, 16.8) {Phase 3: Secure Computation};
+      rounded corners=3pt, inner sep=4pt, text=acaRedLine!80!black, anchor=center]
+      at ($(zone3.north)+(0,0.3)$) {Phase 3: Secure Computation};
 \node[font=\footnotesize\bfseries, fill=acaTealFill!80, draw=acaTealLine!50,
-      rounded corners=3pt, inner sep=4pt, text=acaTealLine!80!black]
-      at (20.5, 16.8) {Phase 4: Output};
+      rounded corners=3pt, inner sep=4pt, text=acaTealLine!80!black, anchor=center]
+      at ($(zone4.north)+(0,0.3)$) {Phase 4: Output};
 
 % ================================================================
-%  SECURITY ANNOTATION
+%  Title — centred via calc midpoint of the whole zone row
 % ================================================================
-% Position history:
-%   - originally anchor=north west at (0.5, 7.2): outside Phase 1 zone
-%   - then anchor=south west at (0.5, 7.6): inside zone BUT OVERLAPPED
-%     the CRS Setup box (y=8.25..9.75) since the note extends up from
-%     y=7.6 to y≈8.9, well into CRS range.
-%   - NOW anchor=south west at (0.5, 6.2): clearly BELOW CRS Setup
-%     bottom (8.25), note spans y=6.2..7.5 with 0.75cm gap to CRS.
-%     Requires Phase 1 zone bottom extended to y=6.0.
-\node[font=\scriptsize, text=acaRedLine, fill=acaRedFill!50, draw=acaRedLine!40,
-      rounded corners=3pt, inner sep=4pt, anchor=south west] at (0.5, 6.2)
-    {\shortstack[l]{Security: $\lambda = 128$ bits\\Semi-honest model\\UC-secure}};
+\coordinate (rowtop) at ($(zone1.north west)!0.5!(zone4.north east)$);
+\node[font=\large\bfseries, anchor=south] at ($(rowtop)+(0,0.9)$)
+    {Privacy-Preserving Multi-Party Computation Protocol};
 
 \end{tikzpicture}
 \end{document}

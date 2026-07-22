@@ -1,0 +1,18 @@
+{
+  "title": "Fan-in (three sources merge to one)",
+  "layout": { "engine": "dot", "rankdir": "LR", "nodesep": 0.5, "ranksep": 1.2 },
+  "colors": "academic",
+  "nodes": [
+    { "id": "a",     "label": "Modality A", "color": "blue",   "size": "normal", "shape": "rect" },
+    { "id": "b",     "label": "Modality B", "color": "green",  "size": "normal", "shape": "rect" },
+    { "id": "c",     "label": "Modality C", "color": "orange", "size": "normal", "shape": "rect" },
+    { "id": "fuse",  "label": "Fusion $\\oplus$", "color": "purple", "size": "normal", "shape": "circle" },
+    { "id": "out",   "label": "Prediction", "color": "grey",   "size": "small",  "shape": "rect" }
+  ],
+  "edges": [
+    { "from": "a",    "to": "fuse", "style": "main" },
+    { "from": "b",    "to": "fuse", "style": "main" },
+    { "from": "c",    "to": "fuse", "style": "main" },
+    { "from": "fuse", "to": "out",  "style": "main" }
+  ]
+}

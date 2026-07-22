@@ -6,13 +6,14 @@ PDF 重叠检测器 — 编译后自动检测渲染结果中的多种几何问�
     python3 pdf-overlap-checker.py <file.pdf>            # 人读文本输出
     python3 pdf-overlap-checker.py <file.pdf> --json     # 结构化输出供 sub-agent 消费
 
-7 类检测（5 基础 + 2 candidate-triage）：
-  基础 5 类（直接 fix）：
+8 类检测（6 基础 + 2 candidate-triage）：
+  基础 6 类（直接 fix）：
     text-overlap        两段文字 bbox 相交（IoU > 0.03）            [ERROR]
     text-overflow       文字溢出其容器矩形                          [ERROR/WARN]
     off-center          容器内容偏离中心 / 顶部留白过多              [WARN]
     text-line           文字被水平/垂直线穿过                        [WARN]
     line-crossing       多条 line segment 互相交叉（聚合计数）       [WARN]
+    node-outside-zone   子框超出所属 zone 容器边界（FP-safe 包含检测）[ERROR/WARN]
   Candidate 2 类（需 sub-agent triage 区分 ignore/fix）：
     line-through-node   line 真穿过 filled rect 内部（PyMuPDF 几何） [ERROR, candidate]
     node-overlap        两个 sibling node rect 几何重叠              [ERROR, candidate]
@@ -579,6 +580,42 @@ def check_line_through_nodes(
             if is_horizontal and abs(seg.y0 - rect_cy) <= 3 \
                     and seg.length() > rect.width * 3:
                 continue
+            # --- Edge-coincident (outline) suppression --------------------
+            # A segment that runs parallel to a rect edge and sits within
+            # EDGE_BAND of it is the node's own border, not a line passing
+            # *through* the node.  This is the dominant line-through-node
+            # false positive (fig140 Batch 15: 18/18 hits on clean figure):
+            # TikZ draws a filled box as a fill path (bbox) PLUS a separate
+            # stroke path (the 4 border segments), so the border segments
+            # carry a different path_id than the fill rect and escape the
+            # same-path self-skip above; the fill/stroke bboxes also differ
+            # by ~2-3pt (line width, rounded corners), so the two-endpoints-
+            # on-boundary edge check (tol=2.0) misses them.  A true "line
+            # through node" crosses the interior well away from any edge, so
+            # a tight band cannot suppress it.  Applied only to axis-aligned
+            # segments — diagonal chords through a node are never edges.
+            #
+            # The band is proportional to the rect's short side (capped by an
+            # absolute floor) so a rounded-rectangle's straight edge run —
+            # which sits one corner-radius inside the bbox (fig148 stage boxes:
+            # ~23pt radius on a 64pt-tall box = 36% of the short side) — is
+            # still recognised as an edge.  A true through-line crosses the
+            # central ~20% band, which no edge suppression reaches.  Widening
+            # recall here costs nothing: across the whole archive audit,
+            # line-through-node never once flagged a real defect — real defects
+            # are text-class (text-overlap / text-line), handled separately.
+            EDGE_BAND = max(3.5, 0.40 * min(rect.width, rect.height))
+            seg_is_h = abs(seg.y1 - seg.y0) < 2.0
+            seg_is_v = abs(seg.x1 - seg.x0) < 2.0
+            if seg_is_h:
+                seg_y = (seg.y0 + seg.y1) / 2
+                if min(abs(seg_y - rect.top), abs(seg_y - rect.bottom)) <= EDGE_BAND:
+                    continue
+            elif seg_is_v:
+                seg_x = (seg.x0 + seg.x1) / 2
+                if min(abs(seg_x - rect.x0), abs(seg_x - rect.x1)) <= EDGE_BAND:
+                    continue
+
             clip = liang_barsky_clip(seg, rect)
             if clip is None:
                 continue
@@ -621,6 +658,99 @@ def check_line_through_nodes(
     for ri, _ in raw_hits:
         hits_per_rect[ri] = hits_per_rect.get(ri, 0) + 1
     return [iss for ri, iss in raw_hits if hits_per_rect[ri] < CLUSTER_THRESHOLD]
+
+
+def _seg_is_rect_edge(sy_or_sx: float, span0: float, span1: float,
+                      rects: list[BBox], horizontal: bool) -> bool:
+    """True if an axis-aligned line coincides with some rect's edge (so it is a
+    box/zone border, not a leader).  Horizontal line: its y matches a rect's
+    top/bottom and its x-span overlaps that rect.  Vertical: symmetric."""
+    EDGE_TOL = 3.5
+    for r in rects:
+        if horizontal:
+            if min(abs(sy_or_sx - r.top), abs(sy_or_sx - r.bottom)) <= EDGE_TOL \
+                    and span0 < r.x1 and span1 > r.x0:
+                return True
+        else:
+            if min(abs(sy_or_sx - r.x0), abs(sy_or_sx - r.x1)) <= EDGE_TOL \
+                    and span0 < r.bottom and span1 > r.top:
+                return True
+    return False
+
+
+def check_text_strikethrough(
+    words: list[BBox], segments: list[Segment], rects: list[BBox]
+) -> list[Issue]:
+    r"""Detect a line/arrow/leader passing through the CENTER of a text label —
+    a strikethrough that garbles the label.
+
+    Two archive defects this catches that the WARN-level text-line advisory
+    (pdfplumber-based) missed or under-graded:
+      - fig146 (VAE): a DASHED `ε∼N(0,I)` leader runs straight through its own
+        caption.  pdfplumber drops dashed strokes, so text-line never saw it.
+        PyMuPDF segments carry the dash flag, so we see it here.
+      - fig95 (glycolysis): the main-spine arrow passes through the phase
+        labels.  text-line flagged it only as WARN; a through-the-center
+        strike is a hard defect, not an advisory.
+
+    High-confidence ERROR — fires only when an axis-aligned segment (a) crosses
+    the word's central band, (b) extends >= EXT past BOTH ends of the word, and
+    (c) is NOT one of a rect's own edges.  Test (b) rejects fraction bars,
+    underlines, and subscript rules (none straddle the whole word); test (c)
+    rejects box/zone borders that happen to run at a title's height (fig147
+    Transformer-Encoder zone top edge over its "Output: T…" title).  A genuine
+    leader (fig146) sits in open space, coincident with no rect edge.
+    """
+    issues: list[Issue] = []
+    MIN_W = 10.0     # skip single glyphs / tiny fragments (bare sub/superscripts)
+    EXT = 8.0        # segment must extend >= EXT pt past each end of the word
+    BUF = 2.0        # central band = word minus BUF pt top & bottom (abs, matches
+                     # check_text_line_overlap; proportional bands miss by <1pt)
+
+    for w in words:
+        if w.width < MIN_W or w.height < 4:
+            continue
+        for s in segments:
+            is_h = abs(s.y1 - s.y0) < 2.0
+            is_v = abs(s.x1 - s.x0) < 2.0
+            if is_h:
+                sy = (s.y0 + s.y1) / 2
+                if not (w.top + BUF < sy < w.bottom - BUF):
+                    continue
+                sx0, sx1 = min(s.x0, s.x1), max(s.x0, s.x1)
+                if not (sx0 <= w.x0 - EXT and sx1 >= w.x1 + EXT):
+                    continue
+                if _seg_is_rect_edge(sy, sx0, sx1, rects, horizontal=True):
+                    continue
+                tag = "虚线" if s.dashed else "线"
+                issues.append(Issue(
+                    level="ERROR",
+                    category="text-strikethrough",
+                    message=f"{tag}穿删文字: \"{w.label}\" "
+                            f"(水平{tag} y={sy:.0f} 贯穿文字中心 "
+                            f"y={w.top:.0f}-{w.bottom:.0f}, 两端超出文字)"
+                ))
+                break
+            elif is_v:
+                sx = (s.x0 + s.x1) / 2
+                if not (w.x0 + BUF < sx < w.x1 - BUF):
+                    continue
+                sy0, sy1 = min(s.y0, s.y1), max(s.y0, s.y1)
+                if not (sy0 <= w.top - EXT and sy1 >= w.bottom + EXT):
+                    continue
+                if _seg_is_rect_edge(sx, sy0, sy1, rects, horizontal=False):
+                    continue
+                tag = "虚线" if s.dashed else "线"
+                issues.append(Issue(
+                    level="ERROR",
+                    category="text-strikethrough",
+                    message=f"{tag}穿删文字: \"{w.label}\" "
+                            f"(垂直{tag} x={sx:.0f} 贯穿文字中心 "
+                            f"x={w.x0:.0f}-{w.x1:.0f}, 两端超出文字)"
+                ))
+                break
+
+    return issues
 
 
 def check_node_overlap(
@@ -693,6 +823,140 @@ def check_node_overlap(
                         f"vs rect[{b.x0:.0f},{b.top:.0f},{b.x1:.0f},{b.bottom:.0f}] "
                         f"IoU={iou:.3f} (重叠 {ox:.1f}×{oy:.1f}pt)"
             ))
+    return issues
+
+
+def check_zone_containment(rects: list[BBox]) -> list[Issue]:
+    """Detect node boxes that are TOO BIG for the zone (container) they sit in.
+
+    The one rect-vs-rect relation every other check misses:
+      - check_text_overflow tests word-vs-its-own-container (the node box), so a
+        *node* overflowing its *zone* is invisible; and rounded-corner boxes
+        never enter pdfplumber's page.rects, so on the skill's house style that
+        check often has no containers at all.
+      - check_node_overlap tests sibling intersection, not child-exceeds-parent,
+        and is size-capped (MAX_W=140) so a wide title strip escapes it.
+
+    Scope — deliberately the mode-A failure, NOT every stray overhang:
+      A node is flagged only when it is genuinely TOO BIG for its zone (content
+      grew past the skeleton's fixed-width container, so even centered it would
+      not fit).  A small element merely *placed* near a decorative band edge — a
+      free connector label, an arrowhead tip — is NOT flagged: that is placement,
+      not overflow.  (Adversarial testing showed flagging those produced false
+      positives on good skeletons E/F.)  This keeps the check FP-safe.
+
+    Mechanism (PyMuPDF synthesized filled rects, which include rounded boxes):
+      0. Collapse near-duplicate rects (re+synth twins, drop-shadow twins) so the
+         zone threshold and size math see one box per physical box.
+      1. ZONE = a rect holding the center of >=2 other rects (shape/size-agnostic).
+      2. Owner of a child = the LARGEST zone whose interior holds the child's
+         center — the most generous container, so a compact sub-zone can't
+         falsely claim a child the outer zone actually contains.  No owner →
+         free-floating → skip.
+      3. Flag a side only if the child is too big to fit that axis of the owner
+         (child wider/taller than the zone) AND sticks out > TOL on that side.
+
+    ERROR for clear overflow (> 5pt), WARN for marginal, mirroring
+    check_text_overflow's thresholds.
+    """
+    issues: list[Issue] = []
+    TOL = 2.5
+    ERROR_PT = 5.0
+    EPS = 0.5
+    MIN_DIM = 6.0  # below this on BOTH sides = arrowhead / glyph, not a content box
+
+    # 0. Collapse near-duplicate rects: a sharp box appears twice (re + synth
+    #    path) and `drop shadow` draws an offset twin.  Merge them (dims within
+    #    3pt, centers within 5pt — matching check_node_overlap's shadow rule) so
+    #    the >=2-child zone threshold and the size test see one box per box.
+    uniq: list[BBox] = []
+    for r in rects:
+        rcx, rcy = (r.x0 + r.x1) / 2, (r.top + r.bottom) / 2
+        if any(abs(r.width - u.width) < 3 and abs(r.height - u.height) < 3
+               and abs(rcx - (u.x0 + u.x1) / 2) <= 5
+               and abs(rcy - (u.top + u.bottom) / 2) <= 5
+               for u in uniq):
+            continue
+        uniq.append(r)
+    rects = uniq
+
+    n = len(rects)
+    if n < 3:  # need at least a zone + 2 contained rects
+        return issues
+
+    centers = [((r.x0 + r.x1) / 2, (r.top + r.bottom) / 2) for r in rects]
+
+    def holds_center(outer: BBox, cx: float, cy: float) -> bool:
+        return (outer.x0 - EPS < cx < outer.x1 + EPS
+                and outer.top - EPS < cy < outer.bottom + EPS)
+
+    # 1. classify zones (a rect holding >=2 other rect centers).
+    is_zone = [False] * n
+    for i, outer in enumerate(rects):
+        cnt = 0
+        for j in range(n):
+            if i == j:
+                continue
+            cx, cy = centers[j]
+            if holds_center(outer, cx, cy):
+                cnt += 1
+                if cnt >= 2:
+                    break
+        is_zone[i] = cnt >= 2
+
+    if not any(is_zone):
+        return issues  # no containers → simple figure, nothing to check
+
+    # 2 + 3. each non-zone child vs the LARGEST zone that claims it.
+    for j, child in enumerate(rects):
+        if is_zone[j]:
+            continue  # zones (incl. nested sub-zones) are not tested as children
+        if child.width < MIN_DIM and child.height < MIN_DIM:
+            continue  # arrowhead / glyph, not a content box
+        cx, cy = centers[j]
+        parent = None
+        parent_area = -1.0
+        for i, outer in enumerate(rects):
+            if not is_zone[i] or i == j:
+                continue
+            if holds_center(outer, cx, cy):
+                area = outer.width * outer.height
+                if area > parent_area:
+                    parent, parent_area = outer, area
+        if parent is None:
+            continue  # free-floating element, belongs to no zone
+
+        # Only "content too big for the container" counts (the mode-A failure).
+        # A child that *fits* the zone but is positioned near an edge is mere
+        # placement (free label / arrowhead on a decorative band) → skip.
+        too_wide = child.width > parent.width - 2 * TOL
+        too_tall = child.height > parent.height - 2 * TOL
+        if not (too_wide or too_tall):
+            continue
+
+        overflows = []
+        if too_wide and child.x0 < parent.x0 - TOL:
+            overflows.append(("左", parent.x0 - child.x0))
+        if too_wide and child.x1 > parent.x1 + TOL:
+            overflows.append(("右", child.x1 - parent.x1))
+        if too_tall and child.top < parent.top - TOL:
+            overflows.append(("上", parent.top - child.top))
+        if too_tall and child.bottom > parent.bottom + TOL:
+            overflows.append(("下", child.bottom - parent.bottom))
+        if not overflows:
+            continue
+
+        max_over = max(v for _, v in overflows)
+        level = "ERROR" if max_over > ERROR_PT else "WARN"
+        desc = ", ".join(f"{side}溢出 {v:.1f}pt" for side, v in overflows)
+        issues.append(Issue(
+            level=level,
+            category="node-outside-zone",
+            message=f"节点超出所属 zone(内容超容器尺寸): rect[{child.x0:.0f},"
+                    f"{child.top:.0f},{child.x1:.0f},{child.bottom:.0f}] {desc} "
+                    f"(zone[{parent.x0:.0f},{parent.top:.0f},"
+                    f"{parent.x1:.0f},{parent.bottom:.0f}])"
+        ))
     return issues
 
 
@@ -913,6 +1177,12 @@ def validate_pdf(filepath: str) -> list[Issue]:
     # rectangles regardless of how they were drawn.
     segments, _curves, rects_filled, _rects_stroke, rect_pids = extract_pymupdf_geometry(filepath)
     if segments is not None:
+        # 8. Text-strikethrough (a line/leader through a label's center).
+        # Uses PyMuPDF segments so DASHED leaders are seen (pdfplumber drops
+        # them, so the pdfplumber-based text-line advisory above misses them).
+        # rects (pdfplumber stroke rects + PyMuPDF filled) let it reject
+        # box/zone borders that merely run at a title's height.
+        all_issues.extend(check_text_strikethrough(words, segments, rects + rects_filled))
         if rects_filled:
             node_rects = rects_filled
             node_rect_pids = rect_pids
@@ -923,6 +1193,8 @@ def validate_pdf(filepath: str) -> list[Issue]:
             all_issues.extend(check_line_through_nodes(segments, node_rects, node_rect_pids))
             # 7. Node-vs-node geometric overlap (sibling intersection).
             all_issues.extend(check_node_overlap(node_rects, node_rect_pids))
+            # 8. Node-vs-zone containment (child box overflowing its container).
+            all_issues.extend(check_zone_containment(node_rects))
 
     return all_issues
 
