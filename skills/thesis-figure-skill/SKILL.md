@@ -64,7 +64,7 @@ description: |
 | **信息 panel** | hyperparameters 框 / metrics 表 (FID/BLEU/Acc) / color legend / glossary 注释 / 数学符号速查 |
 | **数学公式嵌入** | `FFN(x) = max(0, xW₁+b₁)W₂+b₂` 直接写进 box 内部，**不是只贴标签** |
 | **配色** | ≥5 种 zone tone + accent color；浅色 zone 背景 + 中饱和度 box + dark accent |
-| **层级** | hero ≥ 2× 辅助 box；"N=6 layers" 灰色透明栈背景 |
+| **层级** | 五种造层级的手段——**尺寸 / 字重 / 颜色 / 留白 / 描边粗细**，任选 ≥2 种叠加。例：hero ≥ 2× 辅助 box、hero 容器描边 1.4pt 而其余 0.6pt、hero 用唯一中调底色、"N=6 layers" 灰色透明栈背景。<br>⚠️ **画布尺寸已定时，优先用字重/颜色/描边/留白，不要用字号**——字号是全局耦合量，放大它等于同时挤压所有框 |
 | **Cross-zone** | dashed rail + 跨段标签 (如 "K, V") |
 | **学术 polish** | dataset 标注 ("CIFAR-10") / 性能数字 ("FID=3.17") / 引用作者年份 |
 
@@ -450,7 +450,7 @@ draw.io：`xmllint --noout file.drawio && drawio -x -f pdf -o out.pdf file.drawi
 | **A. 3 秒第一印象** | 写出"3 秒内看到的 3 件事"（如 "蓝色主流左→右 / 中间有 hero / 右侧 3 个 head"）| 法则 1 |
 | **B. 主线眼睛轨迹** | 找出图中**最重要的那条数据流**，用眼睛沿它从起点走到终点。任何"卡住"位置 = blocker（如 fig97 Pedersen 框里跑出箭头 / fig118 tip 撞坐标 / fig120 孤立彩点） | 法则 2 |
 | **C. 删除测试** | 列出**疑似可删的元素**（孤立装饰 / 多余 leader / 重复 label）。空则一句 "无可删元素" | 法则 3 |
-| **D. 审美退步测试**（round ≥ 2 时） | 对比上轮 PNG，本轮修了 X bug 但有没有引入新审美问题（对称丢 / 平行断 / 间距不均）？ | 法则 3 |
+| **D. 审美退步测试**（round ≥ 2 时） | 对比上轮 PNG，本轮修了 X bug 但有没有引入新审美问题（对称丢 / 平行断 / 间距不均 / **字号整体放大 / 文字撑框**）？<br>⚠️ 本轮若动过 `\documentclass` 基准字号、`every node` 字号或任一 `font=` 档位 → **必须并列报出上一轮与本轮的 CJK 字号分布**（见 checklist T5），不允许只写"更清楚了" | 法则 3 |
 | **E. 大块空白 + ①注释核验** | 扫描整图无 > 3cm × 2cm 大块空白（细线不算填充，必须有 box/text/viz）；figure.tex 头部有 form A/B 注释块。**fig137 教训**：写"rail 填充"= 自欺。若有大空白 → 回 ① 重新规划布局，不是改 .tex | 法则 3 |
 
 **Step 0 任一项 fail = blocker**，列入 patch 列表。**Step 0 通过才开始 Step 3 的 18 项**。
