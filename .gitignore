@@ -13,3 +13,6 @@ test-output/
 thesis-figure-test/
 *.lint.png
 *.overlap.json
+
+# 满意成图库（本地，含未发表论文原文，不入库）
+gallery/

@@ -1,15 +1,15 @@
-# 视觉审查清单（18 项 — last-mile bug 检查）
+# 视觉审查清单（19 项 — last-mile bug 检查）
 
 > **本文件是审查条目与数量的唯一真相源（SoT）**：SKILL.md 只引用本清单、不另行规定条目数或 ID 范围。新增/删除条目只改这里，改完同步本行标题的计数。
 > **何时加载**：步骤 ④.5 视觉反馈循环中每一轮加载本文件。
-> **加载后必须做的事**：Read PNG + Read overlap.json 后**逐项**回答 18 个 Y/N。
+> **加载后必须做的事**：Read PNG + Read overlap.json 后**逐项**回答 19 个 Y/N。
 > **核心理解**：本清单是 catching last-mile bugs，**不是设计指南**。设计指南在 SKILL.md 顶部 Philosophy 段。
-> 18 项全部 Y 仅说明"没有明显 bug"，**不说明"审美达标"**——审美由 Philosophy 段的 UNFORGETTABLE Question 主导。
+> 19 项全部 Y 仅说明"没有明显 bug"，**不说明"审美达标"**——审美由 Philosophy 段的 UNFORGETTABLE Question 主导。
 
 ## 强制流程
 
 ```
-0. Read PNG + Philosophy 检查（不是机械 18 项之前的前置）
+0. Read PNG + Philosophy 检查（不是机械 19 项之前的前置）
    ↓
    问 3 个 UNFORGETTABLE 问题：
    (a) 审稿人 5 秒看完，记住什么？(若说不出 → blocker)
@@ -17,21 +17,36 @@
    (c) 沿主线眼睛走一遍有无"卡住"？
    ↓
 1. Read overlap.json（7 类几何检测）
-2. 逐项回答下面 18 项 Y/N
+2. 逐项回答下面 19 项 Y/N
 3. 任一 N → blocker → patch → recompile → 回 0
-4. Philosophy 段 + 18 项全过 → 给用户看
+4. Philosophy 段 + 19 项全过 → 给用户看
 5. 用户也 OK → 交付
 ```
 
-**两层标准**：Philosophy（审美天花板，主观判断）+ 18 项（地板，机械验证）。**两者都必须过**。
+**两层标准**：Philosophy（审美天花板，主观判断）+ 19 项（地板，机械验证）。**两者都必须过**。
 
 ---
 
-## 维度 1：编译保障（3 项 — 编译必过）
+## 维度 1：编译保障（4 项 — 编译必过）
 
 - [ ] **T1** 所有数学公式字符（`\mathbf`、`\frac`、下标、希腊字母）渲染正常（无小点、无 sigil、无问号、无空白方块）？
 - [ ] **T3** 编译日志无 `Missing character` 警告？
 - [ ] **T4** 任一标签都不被截断——对每个 text width < 3cm 的标签盒，显式量字符数 vs box width（中文每字 ~0.4cm，英文每字 ~0.2cm）
+- [ ] ⭐ **T5** **字号上限与文字/容器比例**（T4 只管下限方向，本项管上限——缺了它字号规则就是单向棘轮）：
+  - **(a) 撑框检测**：任一标签渲染宽度 ≤ 所在框内宽的 **80%**、渲染高度 ≤ 框内高的 **60%**。超出即 N；修法优先级：缩短文案 > 改两行 > 加宽框；**画布已定时禁止放大字号**
+  - **(b) 字号回归检测**（round ≥ 2 且本轮动过 `\documentclass` 基准 / `every node` 字号 / 任一 `font=` 档位时**强制**）：并列报出上一轮与本轮的 CJK 字号分布，任一档位涨幅 > 15% 即 N，除非同时按比例缩小了画布
+    ```bash
+    python3 -c "
+    import fitz,sys;from collections import Counter
+    p=fitz.open(sys.argv[1])[0];c=Counter()
+    for b in p.get_text('dict')['blocks']:
+      for l in b.get('lines',[]):
+        for s in l.get('spans',[]):
+          if any('一'<=ch<='鿿' for ch in s['text']):
+            c[round(s['size'],1)]+=len([ch for ch in s['text'] if '一'<=ch<='鿿'])
+    print(f'{p.rect.width/28.3465:.2f}cm', dict(sorted(c.items(),reverse=True)))" out.pdf
+    ```
+  - **(c) 印刷字号复核**：`最小 CJK 字号 × (目标印刷宽度 ÷ PDF 宽度)` ≥ ①.3a 定的目标值。不达标 → **回 ① 重定画布或删内容**，不是原地放大字号
 
 ## 维度 2：空间布局（4 项 — 防灾难）
 
@@ -70,7 +85,7 @@ Philosophy:
   - UNFORGETTABLE: 审稿人会记住 [...]
   - 统计中心默认避开：[box+arrow only / 3 色单调 / 无 viz / ...] 各 Y/N
   - 主线眼睛轨迹：从 [起点] 到 [终点] 无卡住 ✓
-18 项：
+19 项：
   [T1] Y/N — 证据
   [T3] Y/N — 证据
   ...
@@ -80,7 +95,7 @@ Blockers (N items): [...]
 Patch plan (单类，最小改动)：[...]
 ```
 
-**任一 Philosophy 项 fail OR 任一 18 项 N = blocker**。
+**任一 Philosophy 项 fail OR 任一 19 项 N = blocker**。
 
 ---
 
